@@ -257,7 +257,7 @@
 **20.1 `echostream/browser/bundle_format.py` + `export.py`（导出器）**
 - **骨架**：读 `artifacts/serving/current`（集群正在服务的那个 bundle），写 `web/demo-public/model/`：
   `model.bin.gz`（所有数组拼在一起，每个数组在 `manifest.json` 里记偏移、形状、编码）、`ranker.json`（LightGBM 树摊平成数组）、
-  `catalog.json`（10,728 个视频的中文标题 + 一级类目，类目英文名是手写表 `category_en.json`）、`users.json`（6 个真实用户 + 1 个新用户）、`LICENSE.md`（CC BY-SA 4.0）。
+  `catalog.json`（10,728 个视频的中文标题 + 一级类目，类目英文名是手写表 `category_en.json`）、`titles_en.json`（标题的英文机器翻译，`scripts/translate_titles.py` 用千问一次翻完并缓存，页面默认显示英文、可切回中文原文）、`users.json`（6 个真实用户 + 1 个新用户）、`LICENSE.md`（CC BY-SA 4.0）。
   三个预设：`f32`（和服务 bundle 一模一样，约 33 MB）、`f16`、`int8`（发布的这个）。
 - **为什么**：
   - **为什么不是 5 MB？** 目标是 ≤ 5 MB，实测做不到还不伤排序：光 10,728 × 512 的标题向量 int8 就 5.5 MB。试过 PCA 降维——点积误差比 int8 大 7–37 倍；

@@ -559,7 +559,9 @@ KuaiRec — Gao et al., *KuaiRec: A Fully-observed Dataset and Insights for Eval
 KuaiRec: the 10,728 video captions (truncated to 80 characters, unchanged Chinese text), category labels, per-video statistics,
 the interaction histories of 6 KuaiRec users identified only by their anonymous dataset ids, and models trained on the dataset
 (int8-quantized embeddings, the ItemCF table, the LightGBM trees). It is redistributed under the same license, CC BY-SA 4.0,
-with attribution in `web/demo-public/model/LICENSE.md` and in the page footer. The English category names are hand-written.
+with attribution in `web/demo-public/model/LICENSE.md` and in the page footer. The English category names are hand-written;
+the English titles (`titles_en.json`) are machine translations made once with Qwen by `scripts/translate_titles.py` and cached
+in `echostream/browser/titles_en_cache.json`, labeled as such on the page, with the Chinese original one click away.
 
 KuaiRec 数据集由快手和中国科学技术大学的作者发布，许可证 CC BY-SA 4.0。原始数据通过 `make data` 下载，不随本仓库分发。
 例外：浏览器 demo 的模型包（`web/demo-public/model/`）包含由 KuaiRec 派生的数据（视频标题、类目、视频统计、6 个匿名用户的历史、训练出的模型），
