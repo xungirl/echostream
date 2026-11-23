@@ -11,9 +11,11 @@ import Funnel from "./components/Funnel";
 import Echo from "./components/Echo";
 import Profile from "./components/Profile";
 import Hint from "./components/Hint";
+import { TitleLangContext, hasEnglishTitles, type TitleLang } from "./titles";
 
 const HINT_KEY = "echostream-demo-hint-seen";
 const THEME_KEY = "echostream-demo-theme";
+const LANG_KEY = "echostream-demo-title-lang";
 const REPORT = "https://xungirl.com/echostream/";
 const REPO = "https://github.com/xungirl/echostream";
 
@@ -54,6 +56,7 @@ export default function DemoApp({ modelBase = "./model/" }: { modelBase?: string
   const [step, setStep] = useState<Step | null>(null);
   const [hint, setHint] = useState(() => store.get(HINT_KEY) !== "1");
   const [theme, setTheme] = useState<string | null>(() => store.get(THEME_KEY));
+  const [titleLang, setTitleLang] = useState<TitleLang>(() => (store.get(LANG_KEY) === "zh" ? "zh" : "en"));
   const [announce, setAnnounce] = useState("");
   const ttiDone = useRef(false);
 
@@ -131,6 +134,7 @@ export default function DemoApp({ modelBase = "./model/" }: { modelBase?: string
   const pct = progress[1] ? Math.round((100 * progress[0]) / progress[1]) : 0;
 
   return (
+    <TitleLangContext.Provider value={titleLang}>
     <div className="demo">
       <header className="top">
         <a className="brand" href={REPO} aria-label="echostream on GitHub">
@@ -149,6 +153,20 @@ export default function DemoApp({ modelBase = "./model/" }: { modelBase?: string
           <button className="ghost" onClick={() => setHint(true)}>
             How it works
           </button>
+          {model && hasEnglishTitles(model) && (
+            <button
+              className="ghost"
+              aria-pressed={titleLang === "zh"}
+              aria-label={titleLang === "en" ? "Show the original Chinese titles" : "Show English titles"}
+              onClick={() => {
+                const next: TitleLang = titleLang === "en" ? "zh" : "en";
+                setTitleLang(next);
+                store.set(LANG_KEY, next);
+              }}
+            >
+              {titleLang === "en" ? "中文原文" : "English"}
+            </button>
+          )}
           <button className="ghost" onClick={toggleTheme} aria-label="Toggle light and dark theme">
             Theme
           </button>
@@ -221,12 +239,14 @@ export default function DemoApp({ modelBase = "./model/" }: { modelBase?: string
         <p className="muted small">
           Data: KuaiRec (Gao et al., CIKM 2022), © its authors, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>; the
           captions, statistics and models in this page are derived from it and shared under the same license. Video titles are the original
-          Chinese captions; English category names are hand-translated. Embeddings are stored as int8 to keep the download small; the report
+          Chinese captions, shown in English as machine translations (Qwen, translated once and cached; hover a title or press “中文原文”
+          for the original); English category names are hand-translated. Embeddings are stored as int8 to keep the download small; the report
           lists how often screens match the full-precision model. Times shown are computation in this browser tab, not server latency.
         </p>
       </footer>
 
       {hint && model && <Hint onClose={closeHint} />}
     </div>
+    </TitleLangContext.Provider>
   );
 }

@@ -1,5 +1,6 @@
 /** The phone-shaped feed: one screen of 10 videos, each with Skip / Watched / Like. */
 import { useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { titleOf, useTitleLang } from "../titles";
 import { PATHS, type Model } from "../engine/bundle";
 import type { Ranked } from "../engine/recommender";
 import { PATH_INFO, REACTIONS, type Reaction } from "../labels";
@@ -83,7 +84,7 @@ function Card(props: {
 }) {
   const { model, r, pos, rankPos, fresh, leaving, disabled, onReact, onKey } = props;
   const cat = model.catalog.categories[model.catalog.category[r.item]];
-  const title = model.catalog.titles[r.item] || "（无标题）";
+  const title = titleOf(model, r.item, useTitleLang());
   const cls = ["card", fresh ? "fresh" : "", leaving ? `leaving ${leaving}` : ""].join(" ").trim();
   return (
     <li className={cls} data-flip={r.item} data-testid={`card-${r.item}`} onKeyDown={(e) => onKey(e, r.item)}>
@@ -97,8 +98,8 @@ function Card(props: {
           ranker #{rankPos}
         </span>
       </div>
-      <p className="title" lang="zh">
-        {title}
+      <p className="title" lang={title.lang} title={title.lang === "en" ? `Original: ${title.original}` : undefined}>
+        {title.text}
       </p>
       <div className="badges" aria-label="found by">
         {PATHS.filter((p) => p in r.allSources).map((p) => (

@@ -76,6 +76,8 @@ export interface Catalog {
   category: number[];
   categories: Category[];
   category_names_note: string;
+  /** Machine-translated English titles aligned with `titles` (titles_en.json); null if that file is missing. */
+  titles_en?: (string | null)[] | null;
 }
 
 export interface UserRecord {
@@ -297,12 +299,19 @@ export async function loadModel(
   const text = async (name: string) => JSON.parse(new TextDecoder().decode(await fetchBytes(name)));
   const gunzip = async (buf: ArrayBuffer) =>
     new Response(new Response(buf).body!.pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
-  const [binGz, ranker, catalog, users] = await Promise.all([
+  // English titles are display-only and optional: if the file is missing the page shows the Chinese originals.
+  const titlesEn = fetch(`${base}titles_en.json`)
+    .then((r) => (r.ok ? r.json() : null))
+    .then((j) => (j && Array.isArray(j.titles_en) ? (j.titles_en as (string | null)[]) : null))
+    .catch(() => null);
+  const [binGz, ranker, catalog, users, titles_en] = await Promise.all([
     fetchBytes(manifest.model_file),
     text("ranker.json"),
     text("catalog.json"),
     text("users.json"),
+    titlesEn,
   ]);
+  catalog.titles_en = titles_en;
   const t1 = performance.now();
   const bin = manifest.model_file.endsWith(".gz") ? await gunzip(binGz) : binGz;
   const model = decodeModel(manifest, bin, ranker, catalog, users.users);
