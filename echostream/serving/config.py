@@ -29,7 +29,7 @@ class ClusterConfig:
     n_partitions: int = _int("ECHO_PARTITIONS", 8)
     n_workers: int = _int("ECHO_WORKERS", 4)
     n_feature_nodes: int = _int("ECHO_FEATURE_NODES", 3)
-    n_api: int = _int("ECHO_API_REPLICAS", 2)
+    n_api: int = _int("ECHO_API_REPLICAS", 4)
     bundle_dir: str = os.environ.get("ECHO_BUNDLE", str(ROOT / "artifacts" / "serving" / "current"))
 
     # ---- ports (all derived from port_base) ----
