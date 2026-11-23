@@ -1,0 +1,25 @@
+itemcf {'last_n': 20, 'decay': 1.0} {'recall@100': 0.0231, 'recall@200': 0.03719, 'ndcg@10': 0.00765}
+itemcf {'last_n': 20, 'decay': 0.98} {'recall@100': 0.02319, 'recall@200': 0.0372, 'ndcg@10': 0.00779}
+itemcf {'last_n': 50, 'decay': 1.0} {'recall@100': 0.02251, 'recall@200': 0.03745, 'ndcg@10': 0.00702}
+itemcf {'last_n': 50, 'decay': 0.98} {'recall@100': 0.0228, 'recall@200': 0.03802, 'ndcg@10': 0.00729}
+itemcf {'last_n': 200, 'decay': 1.0} {'recall@100': 0.02097, 'recall@200': 0.0355, 'ndcg@10': 0.00564}
+itemcf {'last_n': 200, 'decay': 0.98} {'recall@100': 0.0221, 'recall@200': 0.03722, 'ndcg@10': 0.00681}
+als {'factors': 64, 'alpha': 1.0, 'regularization': 0.05} {'recall@100': 0.02029, 'recall@200': 0.03163, 'ndcg@10': 0.00502}
+als {'factors': 64, 'alpha': 10.0, 'regularization': 0.05} {'recall@100': 0.02078, 'recall@200': 0.03252, 'ndcg@10': 0.00452}
+als {'factors': 128, 'alpha': 1.0, 'regularization': 0.05} {'recall@100': 0.01831, 'recall@200': 0.02921, 'ndcg@10': 0.00495}
+als {'factors': 128, 'alpha': 10.0, 'regularization': 0.05} {'recall@100': 0.01839, 'recall@200': 0.02899, 'ndcg@10': 0.00388}
+pop_platform {'days': 1, 'column': 'like_cnt'} {'recall@100': 0.05261, 'recall@200': 0.07845, 'ndcg@10': 0.01022}
+pop_platform {'days': 1, 'column': 'complete_play_cnt'} {'recall@100': 0.05539, 'recall@200': 0.08392, 'ndcg@10': 0.014}
+pop_platform {'days': 3, 'column': 'like_cnt'} {'recall@100': 0.03526, 'recall@200': 0.06618, 'ndcg@10': 0.00658}
+pop_platform {'days': 3, 'column': 'complete_play_cnt'} {'recall@100': 0.04485, 'recall@200': 0.0764, 'ndcg@10': 0.00746}
+pop_platform {'days': 7, 'column': 'like_cnt'} {'recall@100': 0.02723, 'recall@200': 0.05635, 'ndcg@10': 0.00488}
+pop_platform {'days': 7, 'column': 'complete_play_cnt'} {'recall@100': 0.0353, 'recall@200': 0.06173, 'ndcg@10': 0.00571}
+TEST pop_global {'mean': 0.00873, 'ci95': [0.008, 0.00953]} SMALL {'mean': 0.56113, 'ci95': [0.54994, 0.5705]}
+TEST pop_recent7d {'mean': 0.04303, 'ci95': [0.04104, 0.04505]} SMALL {'mean': 0.15202, 'ci95': [0.14312, 0.16122]}
+TEST pop_platform1d {'mean': 0.04182, 'ci95': [0.04003, 0.04381]} SMALL {'mean': 0.04792, 'ci95': [0.04333, 0.05299]}
+TEST itemcf {'mean': 0.01814, 'ci95': [0.01673, 0.01943]} SMALL {'mean': 0.61813, 'ci95': [0.60516, 0.63003]}
+TEST als {'mean': 0.01624, 'ci95': [0.01495, 0.01754]} SMALL {'mean': 0.38494, 'ci95': [0.3739, 0.39542]}
+thr 1.0 {'pop_global': {'recall@100': 0.04153, 'recall@200': 0.06069, 'ndcg@10': 0.04301}, 'pop_platform1d': {'recall@100': 0.11606, 'recall@200': 0.17637, 'ndcg@10': 0.13022}, 'itemcf': {'recall@100': 0.08616, 'recall@200': 0.14624, 'ndcg@10': 0.05264}, 'als': {'recall@100': 0.05827, 'recall@200': 0.1004, 'ndcg@10': 0.03186}}
+thr 1.5 {'pop_global': {'recall@100': 0.05423, 'recall@200': 0.08799, 'ndcg@10': 0.02481}, 'pop_platform1d': {'recall@100': 0.10608, 'recall@200': 0.15629, 'ndcg@10': 0.06912}, 'itemcf': {'recall@100': 0.09344, 'recall@200': 0.14748, 'ndcg@10': 0.03406}, 'als': {'recall@100': 0.07201, 'recall@200': 0.11461, 'ndcg@10': 0.02284}}
+thr 2.0 {'pop_global': {'recall@100': 0.07094, 'recall@200': 0.10776, 'ndcg@10': 0.00873}, 'pop_platform1d': {'recall@100': 0.09578, 'recall@200': 0.14184, 'ndcg@10': 0.04182}, 'itemcf': {'recall@100': 0.08901, 'recall@200': 0.12455, 'ndcg@10': 0.01814}, 'als': {'recall@100': 0.07333, 'recall@200': 0.10565, 'ndcg@10': 0.01624}}
+thr 3.0 {'pop_global': {'recall@100': 0.07954, 'recall@200': 0.11025, 'ndcg@10': 0.00617}, 'pop_platform1d': {'recall@100': 0.1068, 'recall@200': 0.15696, 'ndcg@10': 0.03137}, 'itemcf': {'recall@100': 0.05099, 'recall@200': 0.07166, 'ndcg@10': 0.00718}, 'als': {'recall@100': 0.05004, 'recall@200': 0.07786, 'ndcg@10': 0.00838}}
