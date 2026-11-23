@@ -66,3 +66,22 @@ agent:            ## agent with the deterministic fake provider (no network)
 agent-real:       ## agent with DashScope qwen3.8-flash; needs DASHSCOPE_API_KEY; hard cap ¥2 (cost ledger)
 	@test -n "$$DASHSCOPE_API_KEY" || (echo "set DASHSCOPE_API_KEY first" && exit 1)
 	$(PY) scripts/agent_run.py --provider dashscope --cap-yuan 2
+
+stage6:
+	$(PY) scripts/stage6_mmr.py
+stage7:           ## pre-registered simulated A/B (PREREG.md)
+	$(PY) scripts/stage7_sim_ab.py
+stage8:           ## Postgres + shadow/canary/rollback demo + cache + rebuild
+	$(PY) scripts/stage8_prepare_bundles.py
+	$(PY) scripts/stage8_rollout.py
+rebuild-features: ## rebuild the Redis feature store from the Postgres event archive
+	$(PY) -m echostream.store.rebuild
+
+web-data:
+	$(PY) scripts/build_web_data.py
+demo:             ## one command: cluster (demo mode, chaos buttons enabled) + web UI on http://127.0.0.1:5173
+	$(PY) scripts/build_web_data.py
+	ECHO_DEMO_MODE=1 $(MAKE) cluster-up
+	@echo "web UI: http://127.0.0.1:5173  (Ctrl-C, then 'make demo-down')"
+	cd web && npm run dev -- --host 127.0.0.1 --port 5173
+demo-down: cluster-down
