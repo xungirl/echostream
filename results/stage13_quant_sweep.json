@@ -1,0 +1,397 @@
+{
+ "what": "browser bundle size vs agreement with the float32 bundle, real Python read path, same events",
+ "users": [
+  18,
+  495,
+  550,
+  589,
+  838,
+  946,
+  1209,
+  1779,
+  1865,
+  2005,
+  2046,
+  2260,
+  2466,
+  2729,
+  2776,
+  2836,
+  2925,
+  3135,
+  3424,
+  3567,
+  3707,
+  3814,
+  3862,
+  4310,
+  4382,
+  4703,
+  4921,
+  5289,
+  5568,
+  5632,
+  5702,
+  5784,
+  5817,
+  5831,
+  5843,
+  5851,
+  5974,
+  6071,
+  6098,
+  6108,
+  6164,
+  6311,
+  6385,
+  6441,
+  6503,
+  6518,
+  6719,
+  6755,
+  7023,
+  7037
+ ],
+ "n_users": 51,
+ "screens_per_user": 6,
+ "mmr_lambda": 0.7,
+ "machine": "arm64 Darwin 27.2.1",
+ "date": "2026-11-23",
+ "seconds": 275.3,
+ "configs": [
+  {
+   "config": {
+    "item_emb": "f32",
+    "id_emb": "f32",
+    "caption": "f32",
+    "cf_sims": "f32",
+    "cf_topk": 200,
+    "name": "itemf32-idf32-capf32-cff32x200"
+   },
+   "size": {
+    "on_disk_bytes": 33903777,
+    "transfer_bytes": 32939757,
+    "model_bin_uncompressed_bytes": 36001716,
+    "per_file_on_disk": {
+     "model.bin.gz": 32263042,
+     "ranker.json": 672140,
+     "catalog.json": 910126,
+     "users.json": 49201,
+     "manifest.json": 9268
+    },
+    "per_file_transfer": {
+     "model.bin.gz": 32263042,
+     "ranker.json": 270650,
+     "catalog.json": 383868,
+     "users.json": 19561,
+     "manifest.json": 2636
+    }
+   },
+   "vs_serving_bundle": {
+    "screens": 300,
+    "identical_screens": 300,
+    "identical_share": 1.0,
+    "mean_overlap_at10": 1.0,
+    "min_overlap_at10": 1.0,
+    "same_top1_share": 1.0,
+    "rank_scores_identical": true
+   }
+  },
+  {
+   "config": {
+    "item_emb": "f32",
+    "id_emb": "f32",
+    "caption": "f16",
+    "cf_sims": "f32",
+    "cf_topk": 200,
+    "name": "itemf32-idf32-capf16-cff32x200"
+   },
+   "size": {
+    "on_disk_bytes": 23652031,
+    "transfer_bytes": 22688020,
+    "model_bin_uncompressed_bytes": 25016244,
+    "per_file_on_disk": {
+     "model.bin.gz": 22011296,
+     "ranker.json": 672140,
+     "catalog.json": 910126,
+     "users.json": 49201,
+     "manifest.json": 9268
+    },
+    "per_file_transfer": {
+     "model.bin.gz": 22011296,
+     "ranker.json": 270650,
+     "catalog.json": 383868,
+     "users.json": 19561,
+     "manifest.json": 2645
+    }
+   },
+   "vs_float32": {
+    "screens": 306,
+    "identical_screens": 300,
+    "identical_share": 0.9804,
+    "mean_overlap_at10": 0.9997,
+    "min_overlap_at10": 0.9,
+    "same_top1_share": 1.0
+   }
+  },
+  {
+   "config": {
+    "item_emb": "f32",
+    "id_emb": "f32",
+    "caption": "i8row",
+    "cf_sims": "f32",
+    "cf_topk": 200,
+    "name": "itemf32-idf32-capi8row-cff32x200"
+   },
+   "size": {
+    "on_disk_bytes": 17845673,
+    "transfer_bytes": 16881657,
+    "model_bin_uncompressed_bytes": 19566420,
+    "per_file_on_disk": {
+     "model.bin.gz": 16204903,
+     "ranker.json": 672140,
+     "catalog.json": 910126,
+     "users.json": 49201,
+     "manifest.json": 9303
+    },
+    "per_file_transfer": {
+     "model.bin.gz": 16204903,
+     "ranker.json": 270650,
+     "catalog.json": 383868,
+     "users.json": 19561,
+     "manifest.json": 2675
+    }
+   },
+   "vs_float32": {
+    "screens": 306,
+    "identical_screens": 200,
+    "identical_share": 0.6536,
+    "mean_overlap_at10": 0.9856,
+    "min_overlap_at10": 0.8,
+    "same_top1_share": 0.9935
+   }
+  },
+  {
+   "config": {
+    "item_emb": "f16",
+    "id_emb": "f16",
+    "caption": "f16",
+    "cf_sims": "f16",
+    "cf_topk": 200,
+    "name": "itemf16-idf16-capf16-cff16x200"
+   },
+   "size": {
+    "on_disk_bytes": 18726991,
+    "transfer_bytes": 17762988,
+    "model_bin_uncompressed_bytes": 19463608,
+    "per_file_on_disk": {
+     "model.bin.gz": 17086257,
+     "ranker.json": 672140,
+     "catalog.json": 910126,
+     "users.json": 49201,
+     "manifest.json": 9267
+    },
+    "per_file_transfer": {
+     "model.bin.gz": 17086257,
+     "ranker.json": 270650,
+     "catalog.json": 383868,
+     "users.json": 19561,
+     "manifest.json": 2652
+    }
+   },
+   "vs_float32": {
+    "screens": 306,
+    "identical_screens": 295,
+    "identical_share": 0.9641,
+    "mean_overlap_at10": 0.9993,
+    "min_overlap_at10": 0.9,
+    "same_top1_share": 1.0
+   }
+  },
+  {
+   "config": {
+    "item_emb": "i8row",
+    "id_emb": "i8row",
+    "caption": "i8row",
+    "cf_sims": "u8code",
+    "cf_topk": 200,
+    "name": "itemi8row-idi8row-capi8row-cfu8codex200"
+   },
+   "size": {
+    "on_disk_bytes": 10950803,
+    "transfer_bytes": 9986614,
+    "model_bin_uncompressed_bytes": 11324316,
+    "per_file_on_disk": {
+     "model.bin.gz": 9309832,
+     "ranker.json": 672140,
+     "catalog.json": 910126,
+     "users.json": 49201,
+     "manifest.json": 9504
+    },
+    "per_file_transfer": {
+     "model.bin.gz": 9309832,
+     "ranker.json": 270650,
+     "catalog.json": 383868,
+     "users.json": 19561,
+     "manifest.json": 2703
+    }
+   },
+   "vs_float32": {
+    "screens": 306,
+    "identical_screens": 160,
+    "identical_share": 0.5229,
+    "mean_overlap_at10": 0.9778,
+    "min_overlap_at10": 0.8,
+    "same_top1_share": 0.9935
+   }
+  },
+  {
+   "config": {
+    "item_emb": "f16",
+    "id_emb": "f16",
+    "caption": "i8row",
+    "cf_sims": "u8code",
+    "cf_topk": 200,
+    "name": "itemf16-idf16-capi8row-cfu8codex200"
+   },
+   "size": {
+    "on_disk_bytes": 11797352,
+    "transfer_bytes": 10833290,
+    "model_bin_uncompressed_bytes": 12268380,
+    "per_file_on_disk": {
+     "model.bin.gz": 10156513,
+     "ranker.json": 672140,
+     "catalog.json": 910126,
+     "users.json": 49201,
+     "manifest.json": 9372
+    },
+    "per_file_transfer": {
+     "model.bin.gz": 10156513,
+     "ranker.json": 270650,
+     "catalog.json": 383868,
+     "users.json": 19561,
+     "manifest.json": 2698
+    }
+   },
+   "vs_float32": {
+    "screens": 306,
+    "identical_screens": 181,
+    "identical_share": 0.5915,
+    "mean_overlap_at10": 0.983,
+    "min_overlap_at10": 0.8,
+    "same_top1_share": 0.9935
+   }
+  },
+  {
+   "config": {
+    "item_emb": "f32",
+    "id_emb": "f32",
+    "caption": "i8row",
+    "cf_sims": "u8code",
+    "cf_topk": 200,
+    "name": "itemf32-idf32-capi8row-cfu8codex200"
+   },
+   "size": {
+    "on_disk_bytes": 13716731,
+    "transfer_bytes": 12752664,
+    "model_bin_uncompressed_bytes": 14328156,
+    "per_file_on_disk": {
+     "model.bin.gz": 12075890,
+     "ranker.json": 672140,
+     "catalog.json": 910126,
+     "users.json": 49201,
+     "manifest.json": 9374
+    },
+    "per_file_transfer": {
+     "model.bin.gz": 12075890,
+     "ranker.json": 270650,
+     "catalog.json": 383868,
+     "users.json": 19561,
+     "manifest.json": 2695
+    }
+   },
+   "vs_float32": {
+    "screens": 306,
+    "identical_screens": 182,
+    "identical_share": 0.5948,
+    "mean_overlap_at10": 0.9833,
+    "min_overlap_at10": 0.8,
+    "same_top1_share": 0.9935
+   }
+  },
+  {
+   "config": {
+    "item_emb": "f16",
+    "id_emb": "f16",
+    "caption": "i8row",
+    "cf_sims": "u8code",
+    "cf_topk": 100,
+    "name": "itemf16-idf16-capi8row-cfu8codex100"
+   },
+   "size": {
+    "on_disk_bytes": 10344591,
+    "transfer_bytes": 9380544,
+    "model_bin_uncompressed_bytes": 10655988,
+    "per_file_on_disk": {
+     "model.bin.gz": 8703761,
+     "ranker.json": 672140,
+     "catalog.json": 910126,
+     "users.json": 49201,
+     "manifest.json": 9363
+    },
+    "per_file_transfer": {
+     "model.bin.gz": 8703761,
+     "ranker.json": 270650,
+     "catalog.json": 383868,
+     "users.json": 19561,
+     "manifest.json": 2704
+    }
+   },
+   "vs_float32": {
+    "screens": 306,
+    "identical_screens": 6,
+    "identical_share": 0.0196,
+    "mean_overlap_at10": 0.866,
+    "min_overlap_at10": 0.5,
+    "same_top1_share": 0.8562
+   }
+  },
+  {
+   "config": {
+    "item_emb": "f16",
+    "id_emb": "f16",
+    "caption": "i8row",
+    "cf_sims": "u8code",
+    "cf_topk": 50,
+    "name": "itemf16-idf16-capi8row-cfu8codex50"
+   },
+   "size": {
+    "on_disk_bytes": 9491926,
+    "transfer_bytes": 8527876,
+    "model_bin_uncompressed_bytes": 9748672,
+    "per_file_on_disk": {
+     "model.bin.gz": 7851102,
+     "ranker.json": 672140,
+     "catalog.json": 910126,
+     "users.json": 49201,
+     "manifest.json": 9357
+    },
+    "per_file_transfer": {
+     "model.bin.gz": 7851102,
+     "ranker.json": 270650,
+     "catalog.json": 383868,
+     "users.json": 19561,
+     "manifest.json": 2695
+    }
+   },
+   "vs_float32": {
+    "screens": 306,
+    "identical_screens": 2,
+    "identical_share": 0.0065,
+    "mean_overlap_at10": 0.8261,
+    "min_overlap_at10": 0.5,
+    "same_top1_share": 0.8529
+   }
+  }
+ ]
+}
