@@ -370,6 +370,12 @@ Each stage: goal → decision & alternatives → built → verified → measured
   one process, creating a LightGBM Booster after scipy was imported segfaults on macOS (libomp, like torch/faiss in
   Stage 2) → `echostream/browser/__init__.py` imports lightgbm first. (4) Node ≥ 22 defines a global `localStorage` stub
   that hides jsdom's → the UI test supplies an in-memory Storage; the page wraps every storage call in try/catch.
+  (5) English readers could not read the Chinese titles → `scripts/translate_titles.py` translated the 9,112 distinct
+  captions once with Qwen (qwen3.8-flash, batches of 40, cost-capped ledger in `results/translate_cost_ledger.jsonl`) and
+  cached them; a spot check found a title paired with an unrelated translation, so a second pass asked the model to flag
+  pairs that are not translations of each other: 425 of 9,111 flagged (`results/translate_verify.json`, mostly false
+  alarms on loose translations), all re-translated in batches of 5. The page shows English by default, labeled as machine
+  translation, with the original one click (“中文原文”) or one hover away; the model bundle is unchanged.
 - 中文：把正在服务的模型导出成约 10 MB 的静态包，读路径用 TypeScript 重写，HR 点链接就能在浏览器里「划」，每次反应都在本地重算下一屏，
   不需要任何后端。和 Python 读路径（进程内跑真的分片服务、Worker+Lua、Recommender）对拍 300 屏：展示的 10 个视频 300/300 完全一致。
   5 MB 目标做不到又不伤排序（float32 要 33 MB），实测后选 int8：和 float32 相比每屏 10 个视频平均 9.78 个相同、第一个相同 99.4%、完全同序 52%。
