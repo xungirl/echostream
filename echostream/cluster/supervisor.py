@@ -39,9 +39,11 @@ GO_WORKER = ROOT / "go" / "worker" / "bin" / "echostream-worker"
 
 
 def worker_impl(i: int) -> str:
-    """ECHO_WORKER_IMPL = python (default) | go | mixed (even ids Python, odd ids Go: both
-    implementations share leases, streams and feature nodes in one cluster)."""
-    impl = os.environ.get("ECHO_WORKER_IMPL", "") or "python"
+    """ECHO_WORKER_IMPL = go (default, Stage 12) | python | mixed (even ids Python, odd ids Go:
+    both implementations share leases, streams and feature nodes in one cluster). The Go worker
+    has the identical algorithm and output (scripts/go_parity.py) at ~2x the end-to-end replay
+    throughput and ~1/6 of the worker CPU; Python stays as the reference implementation."""
+    impl = os.environ.get("ECHO_WORKER_IMPL", "") or "go"
     if impl not in ("python", "go", "mixed"):
         raise SystemExit(f"ECHO_WORKER_IMPL must be python, go or mixed, not {impl!r}")
     return ("python", "go")[i % 2] if impl == "mixed" else impl
@@ -51,7 +53,8 @@ def worker_cmd(i: int, cfg: ClusterConfig) -> list[str]:
     args = ["--id", f"w{i}", "--metrics-port", str(cfg.worker_metrics_port(i))]
     if worker_impl(i) == "go":
         if not GO_WORKER.exists():
-            raise SystemExit(f"{GO_WORKER} not found: run `make go-build` first")
+            raise SystemExit(f"{GO_WORKER} not found: run `make go-build` (needs Go), "
+                             "or use the Python worker with ECHO_WORKER_IMPL=python")
         return [str(GO_WORKER), *args]
     return [PY, "-m", "echostream.serving.worker", *args]
 

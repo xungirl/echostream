@@ -22,6 +22,14 @@ def run_dir(name: str) -> Path:
 
 GO_WORKER = ROOT / "go" / "worker" / "bin" / "echostream-worker"
 
+# The cluster's default worker is Go (Stage 12). Without a Go toolchain the other integration
+# tests fall back to the Python worker; with one, build the binary once so it is never stale.
+if shutil.which("go") is None:
+    os.environ.setdefault("ECHO_WORKER_IMPL", "python")
+else:
+    subprocess.run([shutil.which("go"), "build", "-o", str(GO_WORKER), "./cmd/echostream-worker"],
+                   cwd=ROOT / "go" / "worker", check=True)
+
 
 def build_go_worker() -> Path:
     """Build the Go worker (cached by Go, ~1 s when unchanged); skip the test if Go is missing."""
