@@ -467,5 +467,717 @@
   "selected_lambda": 0.7,
   "runtime_sec": 29.9
  },
- "history": []
+ "history": [
+  {
+   "run_id": "20261122-220533-baseline",
+   "ts": "2026-11-22T22:05:34",
+   "git": "a0530d2",
+   "candidate": {
+    "name": "baseline",
+    "two_tower": "main",
+    "ranker": "/Users/xunxun/echostream/artifacts/ranker/main.txt",
+    "quotas": {
+     "two_tower": 90,
+     "itemcf": 40,
+     "pop_recent": 35,
+     "pop_platform": 35,
+     "content": 0
+    },
+    "item_stats_cutoff": null,
+    "stale_shard": null,
+    "stale_shard_model": "val_main",
+    "notes": "v1 pipeline"
+   },
+   "n_users": 6607,
+   "metrics": {
+    "recall@10": {
+     "mean": 0.07454,
+     "ci95": [
+      0.07164,
+      0.07754
+     ]
+    },
+    "recall@200": {
+     "mean": 0.23272,
+     "ci95": [
+      0.22816,
+      0.23735
+     ]
+    },
+    "ndcg@10": {
+     "mean": 0.11002,
+     "ci95": [
+      0.10639,
+      0.11362
+     ]
+    },
+    "hit@10": {
+     "mean": 0.47268,
+     "ci95": [
+      0.46042,
+      0.48494
+     ]
+    },
+    "diversity@10": {
+     "mean": 0.74628,
+     "ci95": [
+      0.74189,
+      0.75041
+     ]
+    },
+    "coverage@10": {
+     "mean": 0.03551
+    }
+   },
+   "path_recall@200": {
+    "two_tower": 0.27052,
+    "itemcf": 0.12455,
+    "pop_recent": 0.22795,
+    "pop_platform": 0.14184,
+    "content": 0.10779
+   },
+   "claimed_hits": {
+    "two_tower": 16665,
+    "itemcf": 1049,
+    "pop_recent": 2135,
+    "pop_platform": 1533,
+    "content": 0
+   },
+   "feature_cutoff": 20200901,
+   "history_cutoff": 20200901,
+   "seconds": 26.6
+  },
+  {
+   "run_id": "20261122-220601-logq_removed",
+   "ts": "2026-11-22T22:06:01",
+   "git": "a0530d2",
+   "candidate": {
+    "name": "logq_removed",
+    "two_tower": "main_nologq",
+    "ranker": "/Users/xunxun/echostream/artifacts/ranker/main.txt",
+    "quotas": {
+     "two_tower": 90,
+     "itemcf": 40,
+     "pop_recent": 35,
+     "pop_platform": 35,
+     "content": 0
+    },
+    "item_stats_cutoff": null,
+    "stale_shard": null,
+    "stale_shard_model": "val_main",
+    "notes": "two-tower retrained without logQ correction"
+   },
+   "n_users": 6607,
+   "metrics": {
+    "recall@10": {
+     "mean": 0.07258,
+     "ci95": [
+      0.06981,
+      0.07568
+     ]
+    },
+    "recall@200": {
+     "mean": 0.17283,
+     "ci95": [
+      0.16899,
+      0.17686
+     ]
+    },
+    "ndcg@10": {
+     "mean": 0.10876,
+     "ci95": [
+      0.10517,
+      0.11256
+     ]
+    },
+    "hit@10": {
+     "mean": 0.46375,
+     "ci95": [
+      0.45224,
+      0.47662
+     ]
+    },
+    "diversity@10": {
+     "mean": 0.77013,
+     "ci95": [
+      0.76641,
+      0.77352
+     ]
+    },
+    "coverage@10": {
+     "mean": 0.0508
+    }
+   },
+   "path_recall@200": {
+    "two_tower": 0.09937,
+    "itemcf": 0.12455,
+    "pop_recent": 0.22795,
+    "pop_platform": 0.14184,
+    "content": 0.10779
+   },
+   "claimed_hits": {
+    "two_tower": 3751,
+    "itemcf": 3518,
+    "pop_recent": 5373,
+    "pop_platform": 2333,
+    "content": 0
+   },
+   "feature_cutoff": 20200901,
+   "history_cutoff": 20200901,
+   "seconds": 27.9
+  },
+  {
+   "run_id": "20261122-220631-stale_item_features",
+   "ts": "2026-11-22T22:06:32",
+   "git": "a0530d2",
+   "candidate": {
+    "name": "stale_item_features",
+    "two_tower": "main",
+    "ranker": "/Users/xunxun/echostream/artifacts/ranker/main.txt",
+    "quotas": {
+     "two_tower": 90,
+     "itemcf": 40,
+     "pop_recent": 35,
+     "pop_platform": 35,
+     "content": 0
+    },
+    "item_stats_cutoff": 20200815,
+    "stale_shard": null,
+    "stale_shard_model": "val_main",
+    "notes": "feature job stuck: item/user stats frozen at Aug 15"
+   },
+   "n_users": 6607,
+   "metrics": {
+    "recall@10": {
+     "mean": 0.02591,
+     "ci95": [
+      0.02419,
+      0.02763
+     ]
+    },
+    "recall@200": {
+     "mean": 0.23272,
+     "ci95": [
+      0.22816,
+      0.23735
+     ]
+    },
+    "ndcg@10": {
+     "mean": 0.03864,
+     "ci95": [
+      0.03668,
+      0.04087
+     ]
+    },
+    "hit@10": {
+     "mean": 0.23203,
+     "ci95": [
+      0.22158,
+      0.24247
+     ]
+    },
+    "diversity@10": {
+     "mean": 0.80251,
+     "ci95": [
+      0.7986,
+      0.80646
+     ]
+    },
+    "coverage@10": {
+     "mean": 0.05574
+    }
+   },
+   "path_recall@200": {
+    "two_tower": 0.27052,
+    "itemcf": 0.12455,
+    "pop_recent": 0.22795,
+    "pop_platform": 0.14184,
+    "content": 0.10779
+   },
+   "claimed_hits": {
+    "two_tower": 16665,
+    "itemcf": 1049,
+    "pop_recent": 2135,
+    "pop_platform": 1533,
+    "content": 0
+   },
+   "feature_cutoff": 20200815,
+   "history_cutoff": 20200901,
+   "seconds": 30.0
+  },
+  {
+   "run_id": "20261122-220702-dropped_two_tower_path",
+   "ts": "2026-11-22T22:07:02",
+   "git": "a0530d2",
+   "candidate": {
+    "name": "dropped_two_tower_path",
+    "two_tower": "main",
+    "ranker": "/Users/xunxun/echostream/artifacts/ranker/main.txt",
+    "quotas": {
+     "two_tower": 0,
+     "itemcf": 40,
+     "pop_recent": 35,
+     "pop_platform": 35,
+     "content": 0
+    },
+    "item_stats_cutoff": null,
+    "stale_shard": null,
+    "stale_shard_model": "val_main",
+    "notes": "config push dropped the two-tower recall path"
+   },
+   "n_users": 6607,
+   "metrics": {
+    "recall@10": {
+     "mean": 0.07539,
+     "ci95": [
+      0.07247,
+      0.07825
+     ]
+    },
+    "recall@200": {
+     "mean": 0.21687,
+     "ci95": [
+      0.21262,
+      0.22114
+     ]
+    },
+    "ndcg@10": {
+     "mean": 0.11106,
+     "ci95": [
+      0.1075,
+      0.11473
+     ]
+    },
+    "hit@10": {
+     "mean": 0.47556,
+     "ci95": [
+      0.46314,
+      0.48782
+     ]
+    },
+    "diversity@10": {
+     "mean": 0.74992,
+     "ci95": [
+      0.74548,
+      0.75414
+     ]
+    },
+    "coverage@10": {
+     "mean": 0.03468
+    }
+   },
+   "path_recall@200": {
+    "two_tower": 0.27052,
+    "itemcf": 0.12455,
+    "pop_recent": 0.22795,
+    "pop_platform": 0.14184,
+    "content": 0.10779
+   },
+   "claimed_hits": {
+    "two_tower": 2958,
+    "itemcf": 4227,
+    "pop_recent": 7123,
+    "pop_platform": 3487,
+    "content": 1065
+   },
+   "feature_cutoff": 20200901,
+   "history_cutoff": 20200901,
+   "seconds": 30.2
+  },
+  {
+   "run_id": "20261122-220735-label_threshold_bug",
+   "ts": "2026-11-22T22:07:35",
+   "git": "a0530d2",
+   "candidate": {
+    "name": "label_threshold_bug",
+    "two_tower": "main",
+    "ranker": "/Users/xunxun/echostream/artifacts/ranker/label_bug_thr0.5.txt",
+    "quotas": {
+     "two_tower": 90,
+     "itemcf": 40,
+     "pop_recent": 35,
+     "pop_platform": 35,
+     "content": 0
+    },
+    "item_stats_cutoff": null,
+    "stale_shard": null,
+    "stale_shard_model": "val_main",
+    "notes": "ranker trained with positive = watch_ratio > 0.5"
+   },
+   "n_users": 6607,
+   "metrics": {
+    "recall@10": {
+     "mean": 0.06168,
+     "ci95": [
+      0.05908,
+      0.06438
+     ]
+    },
+    "recall@200": {
+     "mean": 0.23272,
+     "ci95": [
+      0.22816,
+      0.23735
+     ]
+    },
+    "ndcg@10": {
+     "mean": 0.08618,
+     "ci95": [
+      0.08295,
+      0.08926
+     ]
+    },
+    "hit@10": {
+     "mean": 0.42364,
+     "ci95": [
+      0.41199,
+      0.43575
+     ]
+    },
+    "diversity@10": {
+     "mean": 0.76985,
+     "ci95": [
+      0.76568,
+      0.77385
+     ]
+    },
+    "coverage@10": {
+     "mean": 0.05416
+    }
+   },
+   "path_recall@200": {
+    "two_tower": 0.27052,
+    "itemcf": 0.12455,
+    "pop_recent": 0.22795,
+    "pop_platform": 0.14184,
+    "content": 0.10779
+   },
+   "claimed_hits": {
+    "two_tower": 16665,
+    "itemcf": 1049,
+    "pop_recent": 2135,
+    "pop_platform": 1533,
+    "content": 0
+   },
+   "feature_cutoff": 20200901,
+   "history_cutoff": 20200901,
+   "seconds": 32.9
+  },
+  {
+   "run_id": "20261122-220804-stale_shard2_index",
+   "ts": "2026-11-22T22:08:04",
+   "git": "a0530d2",
+   "candidate": {
+    "name": "stale_shard2_index",
+    "two_tower": "main",
+    "ranker": "/Users/xunxun/echostream/artifacts/ranker/main.txt",
+    "quotas": {
+     "two_tower": 90,
+     "itemcf": 40,
+     "pop_recent": 35,
+     "pop_platform": 35,
+     "content": 0
+    },
+    "item_stats_cutoff": null,
+    "stale_shard": 2,
+    "stale_shard_model": "val_main",
+    "notes": "shard 2 kept serving last month's item vectors"
+   },
+   "n_users": 6607,
+   "metrics": {
+    "recall@10": {
+     "mean": 0.07399,
+     "ci95": [
+      0.07117,
+      0.07687
+     ]
+    },
+    "recall@200": {
+     "mean": 0.23381,
+     "ci95": [
+      0.22948,
+      0.23862
+     ]
+    },
+    "ndcg@10": {
+     "mean": 0.10979,
+     "ci95": [
+      0.10622,
+      0.1135
+     ]
+    },
+    "hit@10": {
+     "mean": 0.47298,
+     "ci95": [
+      0.46072,
+      0.486
+     ]
+    },
+    "diversity@10": {
+     "mean": 0.7823,
+     "ci95": [
+      0.77888,
+      0.78565
+     ]
+    },
+    "coverage@10": {
+     "mean": 0.0357
+    }
+   },
+   "path_recall@200": {
+    "two_tower": 0.2493,
+    "itemcf": 0.12455,
+    "pop_recent": 0.22795,
+    "pop_platform": 0.14184,
+    "content": 0.10779
+   },
+   "claimed_hits": {
+    "two_tower": 15825,
+    "itemcf": 1590,
+    "pop_recent": 2641,
+    "pop_platform": 1552,
+    "content": 0
+   },
+   "feature_cutoff": 20200901,
+   "history_cutoff": 20200901,
+   "seconds": 29.0
+  },
+  {
+   "run_id": "20261122-220835-two_tower_seed1",
+   "ts": "2026-11-22T22:08:36",
+   "git": "a0530d2",
+   "candidate": {
+    "name": "two_tower_seed1",
+    "two_tower": "main_seed1",
+    "ranker": "/Users/xunxun/echostream/artifacts/ranker/main.txt",
+    "quotas": {
+     "two_tower": 90,
+     "itemcf": 40,
+     "pop_recent": 35,
+     "pop_platform": 35,
+     "content": 0
+    },
+    "item_stats_cutoff": null,
+    "stale_shard": null,
+    "stale_shard_model": "val_main",
+    "notes": "retrain, different seed"
+   },
+   "n_users": 6607,
+   "metrics": {
+    "recall@10": {
+     "mean": 0.07476,
+     "ci95": [
+      0.07187,
+      0.0777
+     ]
+    },
+    "recall@200": {
+     "mean": 0.23662,
+     "ci95": [
+      0.23205,
+      0.24141
+     ]
+    },
+    "ndcg@10": {
+     "mean": 0.11025,
+     "ci95": [
+      0.10649,
+      0.11395
+     ]
+    },
+    "hit@10": {
+     "mean": 0.47374,
+     "ci95": [
+      0.46163,
+      0.48585
+     ]
+    },
+    "diversity@10": {
+     "mean": 0.74386,
+     "ci95": [
+      0.73946,
+      0.74795
+     ]
+    },
+    "coverage@10": {
+     "mean": 0.03738
+    }
+   },
+   "path_recall@200": {
+    "two_tower": 0.27446,
+    "itemcf": 0.12455,
+    "pop_recent": 0.22795,
+    "pop_platform": 0.14184,
+    "content": 0.10779
+   },
+   "claimed_hits": {
+    "two_tower": 17053,
+    "itemcf": 1085,
+    "pop_recent": 2132,
+    "pop_platform": 1505,
+    "content": 0
+   },
+   "feature_cutoff": 20200901,
+   "history_cutoff": 20200901,
+   "seconds": 31.3
+  },
+  {
+   "run_id": "20261122-220907-ranker_reseed",
+   "ts": "2026-11-22T22:09:07",
+   "git": "a0530d2",
+   "candidate": {
+    "name": "ranker_reseed",
+    "two_tower": "main",
+    "ranker": "/Users/xunxun/echostream/artifacts/ranker/reseed1.txt",
+    "quotas": {
+     "two_tower": 90,
+     "itemcf": 40,
+     "pop_recent": 35,
+     "pop_platform": 35,
+     "content": 0
+    },
+    "item_stats_cutoff": null,
+    "stale_shard": null,
+    "stale_shard_model": "val_main",
+    "notes": "ranker retrained, different bagging seed"
+   },
+   "n_users": 6607,
+   "metrics": {
+    "recall@10": {
+     "mean": 0.07494,
+     "ci95": [
+      0.07185,
+      0.07794
+     ]
+    },
+    "recall@200": {
+     "mean": 0.23272,
+     "ci95": [
+      0.22816,
+      0.23735
+     ]
+    },
+    "ndcg@10": {
+     "mean": 0.10771,
+     "ci95": [
+      0.10384,
+      0.11146
+     ]
+    },
+    "hit@10": {
+     "mean": 0.47298,
+     "ci95": [
+      0.46027,
+      0.4854
+     ]
+    },
+    "diversity@10": {
+     "mean": 0.75072,
+     "ci95": [
+      0.74627,
+      0.75515
+     ]
+    },
+    "coverage@10": {
+     "mean": 0.03906
+    }
+   },
+   "path_recall@200": {
+    "two_tower": 0.27052,
+    "itemcf": 0.12455,
+    "pop_recent": 0.22795,
+    "pop_platform": 0.14184,
+    "content": 0.10779
+   },
+   "claimed_hits": {
+    "two_tower": 16665,
+    "itemcf": 1049,
+    "pop_recent": 2135,
+    "pop_platform": 1533,
+    "content": 0
+   },
+   "feature_cutoff": 20200901,
+   "history_cutoff": 20200901,
+   "seconds": 31.3
+  },
+  {
+   "run_id": "20261122-220937-quota_tweak",
+   "ts": "2026-11-22T22:09:37",
+   "git": "a0530d2",
+   "candidate": {
+    "name": "quota_tweak",
+    "two_tower": "main",
+    "ranker": "/Users/xunxun/echostream/artifacts/ranker/main.txt",
+    "quotas": {
+     "two_tower": 90,
+     "itemcf": 35,
+     "pop_recent": 40,
+     "pop_platform": 35,
+     "content": 0
+    },
+    "item_stats_cutoff": null,
+    "stale_shard": null,
+    "stale_shard_model": "val_main",
+    "notes": "small recall quota change"
+   },
+   "n_users": 6607,
+   "metrics": {
+    "recall@10": {
+     "mean": 0.07463,
+     "ci95": [
+      0.07172,
+      0.07757
+     ]
+    },
+    "recall@200": {
+     "mean": 0.23448,
+     "ci95": [
+      0.22997,
+      0.23918
+     ]
+    },
+    "ndcg@10": {
+     "mean": 0.11001,
+     "ci95": [
+      0.10632,
+      0.11361
+     ]
+    },
+    "hit@10": {
+     "mean": 0.47268,
+     "ci95": [
+      0.46042,
+      0.48494
+     ]
+    },
+    "diversity@10": {
+     "mean": 0.74637,
+     "ci95": [
+      0.74194,
+      0.75054
+     ]
+    },
+    "coverage@10": {
+     "mean": 0.03542
+    }
+   },
+   "path_recall@200": {
+    "two_tower": 0.27052,
+    "itemcf": 0.12455,
+    "pop_recent": 0.22795,
+    "pop_platform": 0.14184,
+    "content": 0.10779
+   },
+   "claimed_hits": {
+    "two_tower": 16664,
+    "itemcf": 957,
+    "pop_recent": 2432,
+    "pop_platform": 1521,
+    "content": 0
+   },
+   "feature_cutoff": 20200901,
+   "history_cutoff": 20200901,
+   "seconds": 30.0
+  }
+ ]
 }

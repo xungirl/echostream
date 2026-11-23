@@ -237,3 +237,6 @@ details.sys summary { cursor: pointer; font-family: var(--mono); color: var(--ac
   .wf-row { grid-template-columns: 6.4rem minmax(0, 1fr) 3.2rem; font-size: 0.74rem; }
   .tab { padding: 0.5rem 0.55rem; }
 }
+
+/* brand icon in the masthead */
+.masthead h1 .logo { width: 40px; height: 40px; vertical-align: -9px; margin-right: 10px; }

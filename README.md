@@ -1,8 +1,4 @@
-<p align="center">
-  <!-- <img src="docs/brand/logo.svg" alt="echostream logo" width="120" /> -->
-</p>
-
-<h1 align="center">echostream · 回响流转</h1>
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/brand/svg/lockup-bilingual-on-dark.svg"><img src="docs/brand/svg/lockup-bilingual-color.svg" alt="echostream · 回响流转" width="460"></picture></p>
 
 <p align="center">
   <b>Every swipe echoes.</b><br/>
@@ -235,7 +231,7 @@ Each stage: goal → decision & alternatives → built → verified → measured
   page (Stage 7) and a Quality page with eval history and the Project Journey timeline. `make demo` starts everything.
 - **Verified:** 13 vitest tests (mocked fetch); screenshots from a live cluster in `docs/screenshots/` — including one taken
   with both replicas of shard 0 slowed by 500 ms and a feature node frozen: the page still renders, the waterfall shows
-  `r0 timeout 44.7ms`, `r1 timeout 42.4ms`, and the response carries `ann_partial:missing_shards=[0]` and
+  `r0 timeout 51.5ms`, `r1 timeout 42.9ms`, and the response carries `ann_partial:missing_shards=[0]` and
   `feature_store_unavailable` (the skipped video reappears because the real-time history is unreachable — degradation, visible).
 - 中文：网页 demo：点「划走」后下一屏变化、每阶段/每分片耗时瀑布图、集群面板可一键注入故障；截图在 docs/screenshots/。
 

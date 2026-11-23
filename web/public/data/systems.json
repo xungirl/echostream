@@ -592,6 +592,380 @@
    "index_mb_per_shard_computed": 315.0
   }
  ],
- "rollout": null,
- "release_guard": null
+ "rollout": {
+  "kind": "systems + simulated online metrics (small-matrix users through the live cluster)",
+  "machine": "macOS-27.2.1-arm64-arm-64bit",
+  "date": "2026-11-22 22:13",
+  "rollouts": [
+   {
+    "version": "v2",
+    "note": "refresh: two-tower retrained with another seed",
+    "decision": "promoted",
+    "reasons": [],
+    "phases": {
+     "shadow": {
+      "scored": 150,
+      "errors": 0,
+      "overlap_at10_mean": 0.6947249999999999,
+      "shadow_p99_ms_per_replica": [
+       25.96,
+       809.96,
+       29.63,
+       25.84
+      ]
+     },
+     "canary": {
+      "control": {
+       "users": 1229,
+       "pos_rate": 0.3433044403652696,
+       "p99_ms": 52.12519227992739,
+       "p50_ms": 17.46620802441612,
+       "errors": 0,
+       "requests": 3687,
+       "degraded": 5
+      },
+      "canary": {
+       "users": 130,
+       "pos_rate": 0.33251283461985803,
+       "p99_ms": 44.70737161987927,
+       "p50_ms": 17.721167008858174,
+       "errors": 0,
+       "requests": 390,
+       "degraded": 0
+      },
+      "pos_rate_diff": -0.010791605745411548,
+      "pos_rate_diff_ci95": [
+       -0.06905688288050467,
+       0.04370769556118239
+      ]
+     }
+    },
+    "log": [
+     "22:14:00 registered v2 (current live: v1)",
+     "22:14:01 shadow: v2 scores every request in parallel, results are not returned",
+     "22:14:04 shadow result: {'scored': 150, 'errors': 0, 'overlap_at10_mean': 0.6947249999999999, 'shadow_p99_ms_per_replica': [25.96, 809.96, 29.63, 25.84]}",
+     "22:14:05 canary: 10% of users (consistent hash) now get v2",
+     "22:14:25 canary result: control pos_rate 0.3433 p99 52.1ms | canary pos_rate 0.3325 p99 44.7ms | diff CI [-0.0691, +0.0437]",
+     "22:14:26 PROMOTED v2; v1 retired"
+    ]
+   },
+   {
+    "version": "v3-slow",
+    "note": "ranker with 2,000 trees x 255 leaves",
+    "decision": "rolled_back",
+    "reasons": [
+     "canary degraded share 185/312 vs control 7/1800"
+    ],
+    "phases": {
+     "shadow": {
+      "scored": 150,
+      "errors": 0,
+      "overlap_at10_mean": 0.31935,
+      "shadow_p99_ms_per_replica": [
+       427.41,
+       267.2,
+       234.57,
+       207.29
+      ]
+     },
+     "canary": {
+      "control": {
+       "users": 600,
+       "pos_rate": 0.27150183705183706,
+       "p99_ms": 120.40735089743976,
+       "p50_ms": 24.8375209630467,
+       "errors": 0,
+       "requests": 1800,
+       "degraded": 7
+      },
+      "canary": {
+       "users": 104,
+       "pos_rate": 0.22079002806519774,
+       "p99_ms": 199.7382788459072,
+       "p50_ms": 77.6840834878385,
+       "errors": 0,
+       "requests": 312,
+       "degraded": 185
+      },
+      "pos_rate_diff": -0.05071180898663932,
+      "pos_rate_diff_ci95": [
+       -0.11344185836944601,
+       0.011873622817133873
+      ]
+     }
+    },
+    "log": [
+     "22:14:26 registered v3-slow (current live: v2)",
+     "22:14:27 shadow: v3-slow scores every request in parallel, results are not returned",
+     "22:14:30 shadow result: {'scored': 150, 'errors': 0, 'overlap_at10_mean': 0.31935, 'shadow_p99_ms_per_replica': [427.41, 267.2, 234.57, 207.29]}",
+     "22:14:31 canary: 10% of users (consistent hash) now get v3-slow",
+     "22:14:55 canary result: control pos_rate 0.2715 p99 120.4ms | canary pos_rate 0.2208 p99 199.7ms | diff CI [-0.1134, +0.0119]",
+     "22:14:56 AUTO-ROLLBACK v3-slow: ['canary degraded share 185/312 vs control 7/1800']; all traffic back on v2"
+    ]
+   },
+   {
+    "version": "v4-plain",
+    "note": "two-tower without logQ / mixed negatives (gate bypassed on purpose)",
+    "decision": "promoted",
+    "reasons": [],
+    "phases": {
+     "shadow": {
+      "scored": 150,
+      "errors": 0,
+      "overlap_at10_mean": 0.434775,
+      "shadow_p99_ms_per_replica": [
+       41.91,
+       47.26,
+       262.06,
+       41.66
+      ]
+     },
+     "canary": {
+      "control": {
+       "users": 133,
+       "pos_rate": 0.20766052034849028,
+       "p99_ms": 75.25688414229077,
+       "p50_ms": 18.739708000794053,
+       "errors": 0,
+       "requests": 399,
+       "degraded": 2
+      },
+      "canary": {
+       "users": 128,
+       "pos_rate": 0.3487432922979798,
+       "p99_ms": 60.50255675450902,
+       "p50_ms": 18.383979506324977,
+       "errors": 0,
+       "requests": 384,
+       "degraded": 0
+      },
+      "pos_rate_diff": 0.1410827719494895,
+      "pos_rate_diff_ci95": [
+       0.06704806126559971,
+       0.21920419644382866
+      ]
+     }
+    },
+    "log": [
+     "22:14:56 registered v4-plain (current live: v2)",
+     "22:14:57 shadow: v4-plain scores every request in parallel, results are not returned",
+     "22:14:59 shadow result: {'scored': 150, 'errors': 0, 'overlap_at10_mean': 0.434775, 'shadow_p99_ms_per_replica': [41.91, 47.26, 262.06, 41.66]}",
+     "22:15:00 canary: 10% of users (consistent hash) now get v4-plain",
+     "22:15:20 canary result: control pos_rate 0.2077 p99 75.3ms | canary pos_rate 0.3487 p99 60.5ms | diff CI [+0.0670, +0.2192]",
+     "22:15:20 PROMOTED v4-plain; v2 retired"
+    ]
+   }
+  ],
+  "rollout_log": [
+   {
+    "ts": "2026-11-22 22:14:00.802857-08",
+    "version": "v2",
+    "action": "registered",
+    "details": {
+     "bundle": "/Users/xunxun/echostream/artifacts/serving/v2"
+    }
+   },
+   {
+    "ts": "2026-11-22 22:14:01.891506-08",
+    "version": "v2",
+    "action": "shadow_start",
+    "details": {}
+   },
+   {
+    "ts": "2026-11-22 22:14:05.902738-08",
+    "version": "v2",
+    "action": "canary_start",
+    "details": {
+     "percent": 10
+    }
+   },
+   {
+    "ts": "2026-11-22 22:14:26.263908-08",
+    "version": "v2",
+    "action": "promoted",
+    "details": {
+     "canary": {
+      "users": 130,
+      "errors": 0,
+      "p50_ms": 17.721167008858174,
+      "p99_ms": 44.70737161987927,
+      "degraded": 0,
+      "pos_rate": 0.33251283461985803,
+      "requests": 390
+     },
+     "control": {
+      "users": 1229,
+      "errors": 0,
+      "p50_ms": 17.46620802441612,
+      "p99_ms": 52.12519227992739,
+      "degraded": 5,
+      "pos_rate": 0.3433044403652696,
+      "requests": 3687
+     },
+     "pos_rate_diff": -0.010791605745411548,
+     "pos_rate_diff_ci95": [
+      -0.06905688288050467,
+      0.04370769556118239
+     ]
+    }
+   },
+   {
+    "ts": "2026-11-22 22:14:26.269143-08",
+    "version": "v3-slow",
+    "action": "registered",
+    "details": {
+     "bundle": "/Users/xunxun/echostream/artifacts/serving/v3-slow"
+    }
+   },
+   {
+    "ts": "2026-11-22 22:14:27.375801-08",
+    "version": "v3-slow",
+    "action": "shadow_start",
+    "details": {}
+   },
+   {
+    "ts": "2026-11-22 22:14:31.439231-08",
+    "version": "v3-slow",
+    "action": "canary_start",
+    "details": {
+     "percent": 10
+    }
+   },
+   {
+    "ts": "2026-11-22 22:14:56.481873-08",
+    "version": "v3-slow",
+    "action": "auto_rollback",
+    "details": {
+     "reasons": [
+      "canary degraded share 185/312 vs control 7/1800"
+     ]
+    }
+   },
+   {
+    "ts": "2026-11-22 22:14:56.486681-08",
+    "version": "v4-plain",
+    "action": "registered",
+    "details": {
+     "bundle": "/Users/xunxun/echostream/artifacts/serving/v4-plain"
+    }
+   },
+   {
+    "ts": "2026-11-22 22:14:57.599785-08",
+    "version": "v4-plain",
+    "action": "shadow_start",
+    "details": {}
+   },
+   {
+    "ts": "2026-11-22 22:15:00.971763-08",
+    "version": "v4-plain",
+    "action": "canary_start",
+    "details": {
+     "percent": 10
+    }
+   },
+   {
+    "ts": "2026-11-22 22:15:20.940574-08",
+    "version": "v4-plain",
+    "action": "promoted",
+    "details": {
+     "canary": {
+      "users": 128,
+      "errors": 0,
+      "p50_ms": 18.383979506324977,
+      "p99_ms": 60.50255675450902,
+      "degraded": 0,
+      "pos_rate": 0.3487432922979798,
+      "requests": 384
+     },
+     "control": {
+      "users": 133,
+      "errors": 0,
+      "p50_ms": 18.739708000794053,
+      "p99_ms": 75.25688414229077,
+      "degraded": 2,
+      "pos_rate": 0.20766052034849028,
+      "requests": 399
+     },
+     "pos_rate_diff": 0.1410827719494895,
+     "pos_rate_diff_ci95": [
+      0.06704806126559971,
+      0.21920419644382866
+     ]
+    }
+   }
+  ],
+  "registry": [
+   {
+    "version": "v1",
+    "status": "retired",
+    "created_at": "2026-11-22 22:14:00.769447-08"
+   },
+   {
+    "version": "v2",
+    "status": "retired",
+    "created_at": "2026-11-22 22:14:00.802321-08"
+   },
+   {
+    "version": "v3-slow",
+    "status": "rolled_back",
+    "created_at": "2026-11-22 22:14:26.268626-08"
+   },
+   {
+    "version": "v4-plain",
+    "status": "live",
+    "created_at": "2026-11-22 22:14:56.486174-08"
+   }
+  ],
+  "archived_events": 11381,
+  "cache": {
+   "ttl_0s": {
+    "degraded_labels": {
+     "ranker_timeout_recall_order": 2
+    },
+    "requests": 3000,
+    "achieved_rps": 100.0,
+    "error_rate": 0.0,
+    "degraded_rate": 0.00067,
+    "p50_ms": 10.27,
+    "p95_ms": 13.66,
+    "p99_ms": 21.18,
+    "max_ms": 93.71,
+    "cache_hits": 0,
+    "hit_rate": 0.0,
+    "pipeline_computations": 3000
+   },
+   "ttl_30s": {
+    "degraded_labels": {
+     "cache_hit": 2151
+    },
+    "requests": 3000,
+    "achieved_rps": 100.0,
+    "error_rate": 0.0,
+    "degraded_rate": 0.717,
+    "p50_ms": 3.06,
+    "p95_ms": 17.43,
+    "p99_ms": 81.35,
+    "max_ms": 246.31,
+    "cache_hits": 2151,
+    "hit_rate": 0.717,
+    "pipeline_computations": 849
+   },
+   "stampede_200_concurrent_same_user": {
+    "ok": 200,
+    "pipeline_computations": 1
+   }
+  },
+  "rebuild": {
+   "events_replayed": 11381,
+   "seconds": 0.22
+  }
+ },
+ "release_guard": {
+  "regressions": 5,
+  "harmless": 3,
+  "true_positives": 4,
+  "false_positives": 1,
+  "recall": 0.8,
+  "precision": 0.8
+ }
 }

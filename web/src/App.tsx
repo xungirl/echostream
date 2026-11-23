@@ -28,6 +28,7 @@ export default function App() {
     <div className="app">
       <header className="masthead">
         <h1>
+          <img className="logo" src="/brand/icon-on-dark.svg" alt="" width={40} height={40} />
           <span className="grad">echostream</span> · 回响流转
         </h1>
         <p className="slogan">Every swipe echoes. 每一次划动，都有回响。</p>

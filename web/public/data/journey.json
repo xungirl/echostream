@@ -59,15 +59,15 @@
   "stage": 8,
   "title": "Postgres + safe rollout",
   "zh": "影子 / 灰度 / 回滚",
-  "done": false,
-  "result": "shadow → canary → promote / auto-rollback"
+  "done": true,
+  "result": "v2: promoted; v3-slow: rolled_back; v4-plain: promoted"
  },
  {
   "stage": 9,
   "title": "Release-guard agent",
   "zh": "发布守门 agent",
-  "done": false,
-  "result": "gate recall None, precision None"
+  "done": true,
+  "result": "gate recall 0.8, precision 0.8"
  },
  {
   "stage": 10,
