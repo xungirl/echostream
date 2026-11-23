@@ -2,7 +2,7 @@
 
 **Machine:** Apple M2 (8 cores: 4 performance + 4 efficiency), 24 GB RAM, macOS (Darwin 27.2), Python 3.12.14 (uv),
 PyTorch 2.15 (MPS for training), faiss-cpu 1.16, LightGBM 4.7, implicit 0.7.3, Redis (Homebrew), nginx (Homebrew),
-PostgreSQL 16. **Date:** 2026-11-22. Everything (load generator included) runs on this one laptop.
+PostgreSQL 16, Go 1.27.4 + go-redis v9.23 (Stage 12). **Date:** 2026-11-22 (Stage 12: 2026-11-23). Everything (load generator included) runs on this one laptop.
 
 **Two kinds of numbers, never mixed:**
 - **quality** — recommendation metrics on the real KuaiRec data (temporal split; or the fully-observed small matrix).
@@ -84,7 +84,8 @@ user −0.0153, recall scores −0.0138, cross −0.0071, real-time −0.0025 [�
 ## Systems (all on one laptop; multi-node on localhost)
 
 Cluster for every systems run unless stated: nginx → 4 API replicas (FastAPI/uvicorn, uvloop) · 4 vector shards × 2 replicas
-(faiss Flat) · 3 Redis feature nodes (consistent hashing) · 1 Redis event bus (8 stream partitions, AOF) · 4 workers ·
+(faiss Flat) · 3 Redis feature nodes (consistent hashing) · 1 Redis event bus (8 stream partitions, AOF) · 4 workers
+(Python in Stages 5–11; Stage 12 compares Python and Go and makes Go the default) ·
 process supervisor. The load generator runs on the same machine and competes for the same 8 cores.
 
 ### Stage 5 — load (`uv run python scripts/stage5_load.py` → `results/stage5_load.json`)
@@ -162,6 +163,101 @@ search it saves. On this synthetic distribution IVF reaches recall@100 = 1.0 at 
 brute force), which says nothing about real data — real-vector ANN recall is in Stage 2.
 
 ---
+
+### Stage 12 — Go event worker vs Python worker (`make bench-go` → `results/stage12_go_worker*.json`, systems/real-replay)
+Same algorithm in both languages (see `go/worker/`, parity below); only the worker process changes. Every run uses all
+**12,530,806** KuaiRec events, 3 repeats per cell, Python and Go interleaved inside each repeat, started only when no
+other echostream cluster ran. Raw rows: `results/stage12_go_worker_runs.jsonl` (one JSON line per run, incl. per-process
+CPU seconds and RSS from psutil, every Redis' CPU, the timeline); log: `results/logs_stage12_go_worker.txt`; summary
+(median, min, max and every run): `results/stage12_go_worker.json`. Every single run: **0 / 7,176 users with a counter
+mismatch**, 0 users with a wrong history length, 0 DLQ.
+
+**Two harnesses.** *drain* (`scripts/stage12_go_bench.py drain`): the 8 partition streams are pre-filled with exactly the
+entries POST /events writes (snapshot restored into a fresh AOF-on event bus, 1.13 GB), then N workers start and the clock
+runs until every stream and pending list is empty — worker + Redis capacity, nothing else running. *replay*: the Stage 5
+harness unchanged (`scripts/stage5_replay.py --worker-impl … --port-base 37000`: client → nginx → 4 API replicas → streams
+→ 4 workers → 3 feature nodes, backpressure at 400k unprocessed entries).
+
+| harness | workers | Python events/s, median [min–max] | Go events/s, median [min–max] | Go ÷ Python, same repeat | worker CPU s / 1M events, Py → Go (median) | worker RSS max, Py / Go |
+|---|---|---|---|---|---|---|
+| drain | 1 | 18,277 [16,105–18,295] | 72,241 [58,636–76,054] | 3.6–4.2× | 49.4 → 7.7 | 55 / 35 MB |
+| drain | 2 | 29,813 [28,293–35,061] | 97,574 [95,985–122,290] | 3.3–3.5× | 58.8 → 10.0 | 47 / 30 MB |
+| drain | 4 | 37,450 [35,952–52,752] | 103,040 [95,836–155,325] | 2.6–2.9× | 91.8 → 12.7 | 53 / 29 MB |
+| drain | 8 | 50,490 [37,552–65,208] | 149,539 [94,708–156,298] | 2.4–3.0× | 95.8 → 10.9 | 53 / 27 MB |
+| **replay (Stage 5 harness)** | 4 | **42,276 [41,670–42,295]** | **85,306 [83,231–85,370]** | **2.0×** (2.00–2.02) | **74.3 → 12.6** | 43 / 28 MB |
+
+Event → feature latency (worker histogram, 40 buckets ≤ 1.5× apart; the true value lies in the bucket shown; same in all
+3 repeats unless a second bucket is listed), Stage 5 replay harness, 4 workers:
+
+| load | Python p50 / p99 | Go p50 / p99 | worker CPU s / 1M events, Py → Go |
+|---|---|---|---|
+| paced 10,000 events/s (first 1.2 M events) | 30–40 / 40–50 ms | 20–30 / 30–40 ms (one run 40–50) | 62.6 → 15.8 |
+| paced 25,000 events/s (first 2.5 M events) | 20–30 / 40–50 ms (one run 50–75) | 15–20 / 30–40 ms (one run 20–30) | 59.9 → 13.9 |
+| max rate (full replay, backlog-dominated) | 10–15 s / 15–30 s | 3–5 s / 7.5–15 s | — |
+
+At a paced load both workers keep up, so latency is dominated by the producer's 1,000-event HTTP batches and the 50 ms
+blocking read, not by processing; Go is one bucket lower. At max rate the latency is queueing behind the 400k backpressure
+window, so it mostly measures throughput again.
+
+**Chaos** (`drain --kill-at 20`, 4 workers): at t = 20 s the worker with the most un-acked entries is `kill -9`ed (1,000
+pending in every run) and restarted 0.3 s later, as the supervisor does. Go ×3: 151,834 / 152,080 / 152,272 events/s
+(the kill costs about the 3 s lease TTL on two partitions), **0 / 7,176 users mismatched in all 3**; Python ×1: 52,421 events/s, 0
+mismatched. `claimed` / `duplicates`: Go 2,000/500, 500/474, 2,000/0; Python 1,000/0 — explained below.
+
+**Where the time goes (pprof, `results/stage12_go_worker_pprof_4w.pb.gz`, 30 s of one of 4 Go workers in a 155k events/s
+drain):** the worker was on-CPU 9.95 s of 30 s (≈ 33 % of one core). Of that, syscalls (socket read/write) 26 %, goroutine
+wake-ups (`pthread_cond_signal`) 20 %, GC `madvise` 9 %, `kevent` 9 %; parsing, hashing and formatting together are a few
+percent. In the same run the single-threaded event-bus Redis used 62 s of CPU in 81 s (77 % busy) and each feature node
+≈ 53 %. So the Go worker is **round-trip / Redis bound**, not CPU bound: one worker already does 72k events/s, and 4 → 8
+workers adds little because the event bus (≈ 5 µs of Redis CPU per event → a ceiling near 200k events/s) is the next
+limit. The Python worker is **CPU bound**: 49–96 CPU-seconds per 1M events, so it scales with processes (18k → 50k from
+1 → 8 workers) until the 8 cores (4 performance + 4 efficiency, shared with 4 Redis) run out. In the full Stage 5 harness
+Go doubles throughput; there the 4 API replicas (≈ 2.4 cores) and the event bus (83 % busy, it also does the XADDs) share
+the machine, and the backlog still sits at the 400k cap, i.e. the event path is still the limit, now on Redis + CPU rather
+than on the worker. A wasted 1 % in Go: `ParseInt`/`ParseFloat` build their (Python-compatible) error text even when
+parsing succeeds; left as is so the measured binary is the committed code.
+
+**Notes on three observations.**
+- *(a) Go chaos `claimed` / `duplicates` vary, Python's were 1,000 / 0.* Not a Go-specific bug, and no entry was ever taken
+  from a worker that was still processing it. Two separate effects, both timing-dependent and both present in the shared
+  algorithm: (1) `claimed` also counts **start-up rebalancing**. A Go process is up in ~10 ms, so the first worker can
+  register alone, take its "fair share" of all 8 partitions, read a 500-entry batch from each, and give 6 back on the next
+  heartbeat; `handle()` sees the lost lease and leaves those entries pending, and the new owners wait (XPENDING gate) until
+  they are 1 s idle and then XAUTOCLAIM them. Re-running the chaos drain on 3M events with a temporary log line in
+  `claim()` showed exactly this: new owners logged "blocked by w0=500" every ~55 ms for ~1 s, then claimed 500 per moved
+  partition (3,000 at start-up), and the restarted worker re-claimed only the killed worker's own entries. Python
+  sweep runs show the same start-up claims (Python ×4 r0: 3,000; ×8: 2,000 / 500 / 1,000). (2) `duplicates` in a chaos
+  run are entries of the killed worker whose Lua script had already run but whose XACK had not been sent when SIGKILL
+  landed: 500 = one partition's whole batch, 474 = a batch killed mid-pipeline, 0 = killed between batches. They are
+  redelivered and the dedupe key turns them into no-ops — that is at-least-once delivery with an exactly-once effect, and
+  the final counts were exact every time. The parity claim is about final state (feature store, DLQ, archive, and the
+  counters of crash-free, already-balanced phases), which is identical; how many entries a crash or a start-up race
+  happens to strand is timing, not behaviour.
+- *(b) Python ×8 r1: 184 duplicates without a kill.* `claimed` = 500 in that run, so one partition changed owner while
+  entries were pending. With 8 CPU-bound Python processes plus 4 Redis on 8 cores, a worker that had already passed the
+  ownership check in `handle()` can take longer than `claim_min_idle` (1 s) to finish its 500-entry batch; the new owner
+  then XAUTOCLAIMs entries the old owner is still applying, and 184 of them were applied twice — the second time a no-op
+  thanks to the dedupe key (0 mismatched users). This is the "zombie window" already listed as a known limit (INTERVIEW Q21):
+  per-user order is not guaranteed during that window, counts are. It exists in Go too, but a Go batch takes milliseconds,
+  so it has not been observed there. A fencing token checked inside the Lua script would close it; not done.
+- *(c) Up to ~60 % run-to-run spread in multi-worker drains (e.g. Go ×4: 103k / 96k / 155k).* Not the workers: in the slow
+  runs **Redis needed ~50 % more CPU time for exactly the same work** (event bus 7.3–7.7 µs of CPU per event vs 5.0 in the
+  fast runs; same for the feature nodes), and Python and Go slowed down in the same time window (runs started 00:41–01:37; every
+  run after 02:00 is fast and tight — the three Go chaos runs land within 0.3 % of each other at 152k). Same work taking more
+  CPU time means slower cores: the M2 has 4 performance + 4 efficiency cores, and with 4 Redis + N workers + anything else
+  on the machine the scheduler sometimes runs a Redis instance on an efficiency core (or the chip clocks down when hot).
+  The contention check only looks for other echostream clusters, so unrelated load during that window cannot be excluded (another
+  agent was using this machine for a screen recording that night). Hence: multi-worker numbers are given as ranges, and the
+  Go ÷ Python ratio is computed within a repeat (the two runs are minutes apart and see the same conditions); that ratio
+  varies far less than the absolute numbers.
+
+**Parity** (`make parity` → `results/stage12_go_parity.json`; also `tests/integration/test_go_parity.py` in `make ci`): one
+deterministic event set with explicit stream ids, fresh Redis ×4 + fresh Postgres per implementation, three phases
+(ghost-consumer takeover incl. entries deleted while pending + 16 kinds of poison; 3 balanced workers + out-of-order
+re-sends + NaN/inf partial writes; kill -9 of a worker frozen mid-batch). Python vs Go: **14,802 feature-store keys,
+28 DLQ entries (all fields incl. reason text), phase-1/phase-2 counters and 14,198 archive rows identical**, and both equal
+an independent ground truth. `tests/integration/test_event_pipeline.py` (no loss / no double count / order / DLQ / crash /
+ghost consumer / frozen feature node) runs against Python, Go and a mixed cluster.
 
 ## Part 2
 

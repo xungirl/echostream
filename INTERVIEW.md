@@ -179,9 +179,79 @@
   A/B 页（Stage 7 结果）、质量页（评测历史 + 项目历程时间轴）。
 - **为什么**：后端项目也要能「看见」：瀑布图直接展示 scatter-gather 的尾延迟和降级标签；点「划走」后下一屏变化，就是「回响」。
 
+### 19. `go/worker/`（Stage 12：用 Go 重写的事件 worker，可直接替换 Python 版）
+
+整体：`cmd/echostream-worker/main.go`（入口）+ `internal/` 下 7 个小包。读的顺序：hashing → pycompat → events → featurestore → worker → main。
+对照着 `echostream/serving/worker.py` 读，几乎一行对一行——这是故意的：**算法完全不变，只换语言**，这样性能差异只来自语言/运行时。
+
+**19.1 `internal/hashing/hashing.go`（一致性哈希 + 分区）**
+- **骨架**：`StableHash(key)` = 8 字节 BLAKE2b 当大端 uint64；`PartitionFor(uid, P)` = hash("user:uid") % P；`Ring` = 每个节点放 100 个虚拟节点，
+  按 (hash, 名字) 排序，`GetNode` 找第一个 hash 比 key 大的点，越界绕回 0。
+- **为什么**：Go 写的 worker 必须把用户写到 **Python API 去读的同一个特征节点**，差一个用户都会「写了但读不到」。所以不能用语言自带的哈希，
+  用一个两边都能算出同样结果的固定函数。`testdata/hashing_golden.json` 是 Python 算出来的 11,005 个用户 × 6 种节点数 + 7 种分区数的答案，Go 测试要求 100% 一致。
+  注意：8 字节摘要的 BLAKE2b 是单独的参数变体，**不是**把 64 字节摘要截断——`blake2b.New(8, nil)` 对，`blake2b.Sum512(...)[:8]` 错。
+- **语法**：`sort.Slice(xs, less)` 原地排序；`sort.Search(n, f)` 二分找第一个让 f 为真的下标（等价 Python 的 `bisect_right`）；
+  `binary.BigEndian.Uint64(b)` 把 8 字节转成整数。
+
+**19.2 `internal/pycompat/pycompat.go`（和 Python 一字不差的解析/格式化）**
+- **骨架**：`FormatFloat` = Python 的 `repr(float)`；`ParseInt` / `ParseFloat` = Python 的 `int(str)` / `float(str)`（含报错文字）；`QuoteString` = `repr(str)`。
+- **为什么**：worker 写进 Redis 的不只是数字，还有字符串：历史条目 `"item:watch_ratio:ts"` 里的浮点数格式、死信里的错误原因（会引用坏值）。
+  Go 的 `%g` 会把 `12.0` 写成 `12`、把时间戳 `1593878903.438` 写成 `1.593878903438e+09`，Python 的 `repr` 不会——不处理的话两种 worker 写出的历史就不一样。
+  Python 的 `int()` 还接受 `" 0_42 "`、阿拉伯数字 `"٤٢"`；`float()` 接受 `"1_0.5"`、`"1e400"`（变成 inf）但不接受 `"0x1p3"`。
+  这些都用 Python 生成的 ~2,000 个模糊字符串 + ~3,000 个随机浮点数做黄金测试。可打印字符表、十进制数字表直接从 CPython 3.12（Unicode 15）生成成 Go 源码
+  （`unicode_py312.go`），因为 Go 标准库的 Unicode 版本更新，有 ~几千个新字符 Python 认为不可打印。
+- **语法**：`strconv.FormatFloat(f, 'e', -1, 64)` 给出最短能往返的数字和指数，再按 Python 规则（指数在 [-4, 16) 用定点）拼；
+  `strings.Builder` 拼字符串；`for _, r := range s` 按 rune（Unicode 码点）遍历，不是按字节。
+
+**19.3 `internal/events/events.go`（事件格式 + 毒消息判定）**
+- **骨架**：`Field{Key, Value}` 有序字段；`Entry{ID, Fields}`（`Fields == nil` = 读到时已被 XDEL）；`Parse(fields)` 返回 `Event` 或 `*PoisonError`。
+- **为什么**：检查顺序和 Python `parse_fields` 完全一样（先缺字段、再按字典顺序逐个转换、最后检查取值），这样同一条坏消息两种 worker 给出同一个死信原因。
+  字段用切片不用 map：Go 的 map 无序，死信副本和 `invalid values {...}` 原因要保持生产者写入的顺序。
+- **语法**：`errors.As(err, &pe)` 判断错误类型（类似 Python 的 `except PoisonEvent`）；返回 `(值, error)` 二元组是 Go 的错误处理方式，没有异常。
+
+**19.4 `internal/featurestore/store.go`（分片特征库）**
+- **骨架**：每个特征节点一个 go-redis 客户端；`ApplyArgs` 拼出 Lua 的 KEYS/ARGV；`ApplyBatch` 把一个节点上的一批事件放进一个 pipeline（一次往返），
+  每条结果是 已应用 / 重复 / 脚本错误；连接错误整体返回 error（调用方重试）。
+- **为什么**：Lua 脚本源码用 `//go:embed apply_event.lua` 嵌进二进制，黄金测试保证它和 Python 的 `APPLY_EVENT_LUA` 一字不差。
+  区分「Redis 回了错误」（确定性，比如 NaN 导致 HINCRBYFLOAT 失败 → 进死信）和「连不上 / 超时」（暂时性 → 留在 pending 重试）是正确性的关键。
+  `NOSCRIPT`（节点重启丢了脚本缓存）→ 重新 SCRIPT LOAD 再整批重跑，安全是因为脚本幂等。
+- **语法**：`pipe := c.Pipeline(); cmds[i] = pipe.EvalSha(...); pipe.Exec(ctx)`；之后逐个看 `cmd.Int64()` 的错误；
+  `errors.As(err, &rerr)` 判断是不是 `redis.Error`（服务器返回的错误）。`Protocol: 2` 强制 RESP2，和 redis-py 一致（RESP3 会把 XREADGROUP 的结果变成无序 map）。
+
+**19.5 `internal/worker/worker.go` + `streams.go`（核心）**
+- **骨架**：两个 goroutine 共享状态：
+  - `leaseLoop`：每 lease_ms/6 一次心跳 —— ZADD 自己到 `workers:alive`、删掉过期的、算公平份额 ceil(P/存活数)、续租（只续自己的）、多了就从最大分区号开始还、少了就 SET NX 抢、把统计写到 `stats:worker:{id}`。
+  - `processLoop`：`processOnce` = 对需要接管的分区先 XAUTOCLAIM（直到别的消费者在这个分区没有 pending 才放行）→ 读自己的 pending（ID "0"）→ 读新消息（">"，最多阻塞 50 ms）→ 每个流调 `handle`。
+  - `handle`：解析 → 毒消息进死信 → 按特征节点分组 → 每个节点一个 goroutine 跑 pipeline（`sync.WaitGroup` 等全部完成，相当于 `asyncio.gather`）→ 计数 / 归档 / XACK + XDEL。
+- **为什么**：
+  - 一个分区同一时刻只有一个 owner（租约），owner 先处理旧的再处理新的 → 用户内有序；接管时没等别人的 pending 清空就读新消息，新消息会「插队」。
+  - 某个特征节点失败：`blocked[p][node]` 记下来，这一轮同分区同节点的后续事件全部不处理（留在 pending），否则后面的事件会比失败的那条先生效。
+  - 共享的 `owned / needsClaim / stats` 用一把 `sync.Mutex` 保护；Python 是单线程事件循环，不需要锁，Go 的两个 goroutine 真的会并行跑 —— `go test -race` 就是查这个的。
+  - XREADGROUP 用 `r.Do(...)` 发原始命令自己解析，因为 go-redis 的 `XReadGroup` 把字段放进 map，丢顺序。
+  - 关闭：`Shutdown()` 关闭 `stop` channel → 两个循环在当前一步做完后退出 → `ReleaseLeases` 释放租约、从存活集合删掉自己 → 别的 worker 立刻接管，不用等租约过期。
+    Python 版是先释放租约再取消任务（可能留下半批已应用未 ACK 的条目，之后作为重复被跳过），Go 版先停循环再释放，最终状态一样。
+- **语法**：`go func() {...}()` 起 goroutine；`chan struct{}` + `close(ch)` 广播「停止」；`select { case <-w.stop: ... case <-t.C: ... }` 可被打断的 sleep；
+  `sync.Once` 保证只 close 一次；`defer mu.Unlock()`；Go 1.22 起 `for i, node := range ...` 每轮是新变量，闭包里直接用是安全的。
+
+**19.6 `cmd/echostream-worker/main.go`**
+- **骨架**：读 `--id`、`--metrics-port`；`/metrics`（Prometheus，指标名和 Python 一样）和 `/debug/pprof`（CPU 剖析）开在同一个端口；
+  SIGTERM/SIGINT → 优雅关闭；`Run` 返回错误 → 退出码 1，让 supervisor 重启（和 Python 版「任务崩了就退出」一致）。
+- **语法**：`import _ "net/http/pprof"` 只为副作用（注册 handler）；`signal.Notify(ch, syscall.SIGTERM)`。
+
+**19.7 怎么切换、怎么验证**
+- 默认就是 Go（`make cluster-up` 会先 `make go-build`）；`ECHO_WORKER_IMPL=python` 切回 Python，`mixed` = 偶数号 Python、奇数号 Go 混在一个集群里，共用租约和流。没装 Go 时自动用 Python。
+- `make go-test`：`go vet` + `go test -race -count=3`，worker 测试自己起 redis-server（重复+毒消息、幽灵消费者接管、崩溃接管、冻结特征节点）。
+- `make parity` / `tests/integration/test_go_parity.py`：同一批事件（含重复、乱序重发、16 种毒消息、NaN 部分写入、幽灵消费者、kill -9）分别喂给两种 worker，
+  每种都用全新的 Redis 和 Postgres，然后逐 key 对比整个特征库、死信流、计数器和归档表。
+- `tests/integration/test_event_pipeline.py` 的 5 个可靠性测试对 python / go / mixed 三种集群各跑一遍。
+- 实测（`results/stage12_go_worker.json`，全量 12,530,806 条，各 3 次）：Stage 5 端到端重放 85,306 vs 42,276 条/秒（Go vs Python，中位数），
+  worker CPU 12.6 vs 74.3 秒 / 百万事件；只测 worker 的 drain：单 worker 72,241 vs 18,277 条/秒；多 worker 的绝对值在几次之间波动可达 60%
+  （慢的那几次 Redis 做同样的活多花约 50% CPU 时间，说明是核变慢了，不是 worker），所以多 worker 只报区间、倍数在同一轮里算。
+  10k 条/秒下事件→特征延迟 p50 20–30 ms / p99 30–40 ms（Python 30–40 / 40–50 ms）。内存 25–35 MB vs 40–55 MB，差距不大——别夸大。
+
 ---
 
-## 第四部分：面试问答（约 30 题，答案都能在代码里指出来）
+## 第四部分：面试问答（约 38 题，答案都能在代码里指出来）
 
 ### 推荐算法
 
@@ -241,3 +311,43 @@
 30. **回归门禁的阈值怎么定的？效果如何？** 不是拍脑袋：对同一批用户做配对 bootstrap，阈值 = max(CI 半宽, 换随机种子重训的标准差)。
     5 个真实退化 + 3 个无害改动：召回 0.8、精确 0.8（`results/stage9_release_guard.json`）。漏掉的是「一个分片用旧向量」——离线几乎没影响；
     误报的是「排序模型换种子」——因为种子噪声只测了双塔，没测排序。改进方向：每个会重训的组件都要测种子噪声。
+
+### Go worker（Stage 12）
+
+31. **这个负载为什么 Go 的 goroutine 比 Python 的 asyncio 快？** 两个都是「一个线程里等很多网络往返」的模型，往返本身并不更快。
+    差别在两次往返之间的 CPU：Python 每条事件要做字典解码、字符串拼接、`repr`、协程调度，实测 49–96 CPU 秒 / 百万事件，
+    单个 worker 被一个核卡死（单 worker 18,277 条/秒）；Go 同样的活 7.7–12.7 CPU 秒 / 百万事件（单 worker 72,241 条/秒）。
+    另外 asyncio 只用一个核，要多核只能开多进程；goroutine 由运行时分到所有核上，一个进程里「每个特征节点一个 pipeline 并行跑」是真并行。
+    pprof 显示 Go worker 只占约 33% 的一个核，剩下的时间在等 Redis——所以瓶颈从「worker 的 CPU」移到了「Redis 往返 + 单线程事件总线」。
+    （`results/stage12_go_worker.json`、`results/stage12_go_worker_pprof_4w.pb.gz`）
+32. **消费者组和 PEL 是什么？** 一个 stream 上建一个消费者组 `workers`，组里每个消费者（w0、w1…）用 `XREADGROUP ... >` 领新消息；
+    领走但还没 `XACK` 的消息记在 PEL（Pending Entries List）里，记着「谁领的、领了多久、投递了几次」。
+    worker 每轮先用 ID `0` 读自己 PEL 里的旧消息（上次没处理完的、刚接管来的），再读新消息，所以同一个用户的事件不会被新的插队。
+    处理完才 ACK，并且马上 XDEL，让 stream 不无限变长。
+33. **XAUTOCLAIM 怎么用？有什么坑？** `XAUTOCLAIM stream group me min-idle start COUNT n`：把 PEL 里空闲超过 min-idle 的消息转到我名下。
+    我们只在刚拿到一个分区租约时调用，并且要等 `XPENDING` 显示别的消费者在这个分区已经没有 pending 才开始读新消息。
+    坑 1：min-idle（1 s）必须大于「一批正常处理所需时间」，否则会抢走一个还活着、只是慢的 worker 正在处理的消息——
+    实测出现过一次：8 个 Python 进程 + 4 个 Redis 挤 8 个核，一批处理超过 1 秒，被新 owner 接管，184 条被处理了两次（幂等兜底，计数仍然全对）。
+    坑 2：worker 启动时第一个进程会暂时拿走全部分区、各读 500 条，下一次心跳再还回去；这些消息要等 1 秒空闲后被别人接管，所以 `claimed` 计数在不同运行之间不一样。
+    坑 3：XAUTOCLAIM 会把「已被 XDEL 的 pending 条目」直接从 PEL 删掉（Redis 7+ 在返回值第三项里列出来），不会交给你处理。
+34. **幂等是怎么做的？为什么要和更新放在同一个 Lua 脚本里？** event_id 由客户端生成；Lua 第一步 `SET ev:{id} 1 NX EX ttl`，
+    设置失败说明处理过，直接返回 0（记为 duplicate）。如果「检查去重」和「更新计数」分成两条命令，中间崩溃就会出现「标记了但没更新」或者「更新了但没标记」。
+    放在一个脚本里，Redis 单线程原子执行，而且一个用户的所有 key（去重 key、历史、计数）都在同一个特征节点上（一致性哈希按用户），所以一个脚本就够。
+    注意 Lua 脚本出错时前面的写入不会回滚：NaN 的 watch_ratio 会先写进历史和 n，然后 HINCRBYFLOAT 报错——两种 worker 行为一致，进死信。
+35. **at-least-once 和 exactly-once 的区别？你们是哪种？** 投递是 at-least-once（崩溃后 PEL 里的消息会被重新投递），效果是 exactly-once
+    （去重 key 让重复投递变成空操作）。kill -9 测试里，被杀的 worker 有一批「Lua 已经执行、还没 ACK」的消息，接管后重新投递，
+    计成 duplicates（Go 三次分别是 500 / 474 / 0，取决于 SIGKILL 落在批次的哪个位置），最终每个用户的计数都和真值一致。
+    真正的端到端 exactly-once 还要求下游（这里是 Postgres 归档）也幂等：`ON CONFLICT (event_id) DO NOTHING`。死信流本身是 at-least-once：
+    写完死信、ACK 之前崩溃，死信里会有重复条目（两种 worker 一样）。
+36. **背压在哪里？** 三层：(1) 生产端：重放脚本在「stream 积压 + pending > 40 万」时暂停发送；(2) worker 每次每个分区最多读 500 条（COUNT），
+    处理完才读下一批，不会把内存撑爆；(3) 某个特征节点失败时，这个分区里属于该节点的后续消息都留在 pending（不 ACK），
+    积压体现在 stream 长度上，可以监控告警。Go 版没有改这套机制——如果 Go 版把消息读进无界 channel 再慢慢处理，吞吐看起来更高，但背压和顺序都没了。
+37. **为什么只重写 worker，不重写 API 或整个系统？** worker 是实时链路里最热、最独立的一段：输入输出契约很窄（stream 名、Redis key、Lua 脚本、指标名），
+    逻辑是纯 I/O + 字符串处理，Python 在这里吃亏最大（实测 Python worker 每百万事件 74 CPU 秒，Go 12.6）。API 的耗时主要在 LightGBM / numpy，
+    本来就是 C/C++；离线训练离不开 Python 的 ML 生态。而且算法逐行照搬，对比时唯一变量是语言/运行时。
+    结果：同一套端到端重放从 42,276 提到 85,306 条/秒（3 次中位数，区间都很窄），之后的瓶颈变成单线程的事件总线 Redis（83% 忙）和整机 CPU，不再是 worker。
+38. **跨语言怎么保证哈希完全一致？** 不能用语言自带的哈希（Python 的 `hash()` 每个进程随机，Go 的 map 哈希也不公开）。
+    两边都用 8 字节摘要的 BLAKE2b，按大端转成 uint64；环上排序规则（hash，再按节点名）和查找规则（第一个 hash 大于 key 的点，越界绕回）也一样。
+    验证：Python 生成 11,005 个用户 id（含 2^31、2^62 等边界）在 6 种节点数下的归属、7 种分区数的分区，写进 `go/worker/testdata/`，Go 测试要求 100% 相同；
+    `tests/unit/test_go_golden.py` 保证 Python 改了以后黄金文件也必须重新生成。最后用对拍测试在真 Redis 上比对整个特征库，14,802 个 key 一个不差。
+    踩过的坑：`blake2b.New(8, nil)` 才对，把 64 字节摘要截断成 8 字节是另一个结果。
