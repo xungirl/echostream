@@ -38,3 +38,12 @@ def test_numpy_export_matches_torch():
     with torch.no_grad():
         t0 = m.user_tower(torch.tensor([[0, 0]]), torch.tensor([[0]]), torch.zeros(1, 1))[0].numpy()
     assert np.allclose(t0, user_tower_numpy(params, np.array([0, 0]), []), atol=1e-5)
+
+
+def test_id_mask_zero_means_content_only():
+    m = make_model().eval()
+    cats, cap = torch.tensor([[1, 2], [1, 2]]), torch.ones(2, 6)
+    with torch.no_grad():
+        v = m.item_tower(torch.tensor([3, 9]), cats, cap, id_mask=torch.zeros(2))
+    # different ids, same content, id masked -> identical vectors
+    assert torch.allclose(v[0], v[1], atol=1e-6)

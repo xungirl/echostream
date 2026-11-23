@@ -40,16 +40,24 @@ class ItemTower(nn.Module):
     def __init__(self, n_items: int, n_cats: int, caption_dim: int, dim: int = 64, id_dim: int = 32):
         super().__init__()
         self.item_id_emb = nn.Embedding(n_items, id_dim)
+        nn.init.normal_(self.item_id_emb.weight, std=0.05)
         self.cat_emb = nn.Embedding(n_cats + 1, 16, padding_idx=0)  # 0 = padding
         self.caption_proj = nn.Linear(caption_dim, 32)
         self.mlp = nn.Sequential(nn.Linear(id_dim + 16 + 32, 128), nn.ReLU(), nn.Linear(128, dim))
 
-    def forward(self, item_ids: torch.Tensor, cats: torch.Tensor, caption: torch.Tensor) -> torch.Tensor:
-        """item_ids [B]; cats [B, C] category ids + 1 (0 = pad); caption [B, caption_dim]."""
+    def forward(self, item_ids: torch.Tensor, cats: torch.Tensor, caption: torch.Tensor,
+                id_mask: torch.Tensor | None = None) -> torch.Tensor:
+        """item_ids [B]; cats [B, C] category ids + 1 (0 = pad); caption [B, caption_dim].
+        id_mask [B] (1 = use the id embedding). Cold-start trick: during training we
+        randomly drop the id embedding so the tower learns to score from content alone;
+        at inference items never seen in training get id_mask = 0."""
         c = self.cat_emb(cats)
         c_mask = (cats > 0).float().unsqueeze(-1)
         c_pooled = (c * c_mask).sum(1) / c_mask.sum(1).clamp(min=1.0)
-        x = torch.cat([self.item_id_emb(item_ids), c_pooled, self.caption_proj(caption)], dim=1)
+        id_vec = self.item_id_emb(item_ids)
+        if id_mask is not None:
+            id_vec = id_vec * id_mask.unsqueeze(-1)
+        x = torch.cat([id_vec, c_pooled, self.caption_proj(caption)], dim=1)
         return F.normalize(self.mlp(x), dim=-1)
 
 

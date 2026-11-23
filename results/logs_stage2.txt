@@ -1,0 +1,63 @@
+  epoch 0 loss 8.1604 (13s)
+  epoch 1 loss 7.5614 (26s)
+  epoch 2 loss 7.2459 (38s)
+  epoch 3 loss 7.0898 (51s)
+val temp 0.05 {'ndcg@10': 0.01242, 'recall@50': 0.02204, 'recall@200': 0.04674}
+  epoch 0 loss 8.0874 (13s)
+  epoch 1 loss 7.4649 (27s)
+  epoch 2 loss 7.2130 (39s)
+  epoch 3 loss 7.0776 (51s)
+val temp 0.1 {'ndcg@10': 0.01356, 'recall@50': 0.02313, 'recall@200': 0.05634}
+  epoch 0 loss 8.0306 (12s)
+  epoch 1 loss 7.4231 (24s)
+  epoch 2 loss 7.2368 (36s)
+  epoch 3 loss 7.1388 (48s)
+val temp 0.2 {'ndcg@10': 0.0133, 'recall@50': 0.02556, 'recall@200': 0.05191}
+  epoch 0 loss 8.0874 (12s)
+  epoch 1 loss 7.4659 (24s)
+  epoch 2 loss 7.2127 (36s)
+  epoch 3 loss 7.0748 (48s)
+val tt_logq_mixed {'ndcg@10': 0.01359, 'recall@50': 0.02289, 'recall@200': 0.05773}
+  epoch 0 loss 7.9248 (10s)
+  epoch 1 loss 7.3609 (21s)
+  epoch 2 loss 7.1083 (31s)
+  epoch 3 loss 6.9539 (42s)
+val tt_logq {'ndcg@10': 0.01361, 'recall@50': 0.03335, 'recall@200': 0.08972}
+  epoch 0 loss 7.7537 (12s)
+  epoch 1 loss 7.2475 (24s)
+  epoch 2 loss 7.0557 (35s)
+  epoch 3 loss 6.9576 (47s)
+val tt_mixed {'ndcg@10': 0.01283, 'recall@50': 0.01955, 'recall@200': 0.0657}
+  epoch 0 loss 7.4232 (11s)
+  epoch 1 loss 6.9734 (22s)
+  epoch 2 loss 6.8111 (32s)
+  epoch 3 loss 6.7277 (44s)
+val tt_plain {'ndcg@10': 0.00295, 'recall@50': 0.0081, 'recall@200': 0.03582}
+  epoch 0 loss 7.9012 (18s)
+  epoch 1 loss 7.2072 (36s)
+  epoch 2 loss 6.9954 (58s)
+  epoch 3 loss 6.8732 (89s)
+test tt_logq_mixed {'ndcg@10': 0.07952, 'recall@50': 0.13591, 'recall@200': 0.25989} small {'ndcg@10': 0.35663, 'recall@50': 0.12664, 'recall@200': 0.24059}
+  epoch 0 loss 7.8352 (17s)
+  epoch 1 loss 7.1504 (35s)
+  epoch 2 loss 6.9101 (53s)
+  epoch 3 loss 6.7682 (71s)
+test tt_logq {'ndcg@10': 0.08027, 'recall@50': 0.14043, 'recall@200': 0.27052} small {'ndcg@10': 0.40238, 'recall@50': 0.13779, 'recall@200': 0.27704}
+  epoch 0 loss 7.6237 (14s)
+  epoch 1 loss 7.0394 (29s)
+  epoch 2 loss 6.8716 (43s)
+  epoch 3 loss 6.7634 (58s)
+test tt_mixed {'ndcg@10': 0.05048, 'recall@50': 0.10027, 'recall@200': 0.23149} small {'ndcg@10': 0.36043, 'recall@50': 0.09993, 'recall@200': 0.17048}
+  epoch 0 loss 7.2650 (12s)
+  epoch 1 loss 6.7637 (24s)
+  epoch 2 loss 6.6070 (37s)
+  epoch 3 loss 6.5123 (49s)
+test tt_plain {'ndcg@10': 0.00711, 'recall@50': 0.02756, 'recall@200': 0.10536} small {'ndcg@10': 0.1574, 'recall@50': 0.08815, 'recall@200': 0.1711}
+  epoch 0 loss 7.8162 (13s)
+  epoch 1 loss 7.1438 (26s)
+  epoch 2 loss 6.9070 (39s)
+  epoch 3 loss 6.7595 (52s)
+  epoch 0 loss 7.8587 (13s)
+  epoch 1 loss 7.1676 (25s)
+  epoch 2 loss 6.9204 (38s)
+  epoch 3 loss 6.7780 (51s)
