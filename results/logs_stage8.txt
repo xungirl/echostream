@@ -1,0 +1,23 @@
+22:14:00 registered v2 (current live: v1)
+22:14:01 shadow: v2 scores every request in parallel, results are not returned
+22:14:04 shadow result: {'scored': 150, 'errors': 0, 'overlap_at10_mean': 0.6947249999999999, 'shadow_p99_ms_per_replica': [25.96, 809.96, 29.63, 25.84]}
+22:14:05 canary: 10% of users (consistent hash) now get v2
+22:14:25 canary result: control pos_rate 0.3433 p99 52.1ms | canary pos_rate 0.3325 p99 44.7ms | diff CI [-0.0691, +0.0437]
+22:14:26 PROMOTED v2; v1 retired
+22:14:26 registered v3-slow (current live: v2)
+22:14:27 shadow: v3-slow scores every request in parallel, results are not returned
+22:14:30 shadow result: {'scored': 150, 'errors': 0, 'overlap_at10_mean': 0.31935, 'shadow_p99_ms_per_replica': [427.41, 267.2, 234.57, 207.29]}
+22:14:31 canary: 10% of users (consistent hash) now get v3-slow
+22:14:55 canary result: control pos_rate 0.2715 p99 120.4ms | canary pos_rate 0.2208 p99 199.7ms | diff CI [-0.1134, +0.0119]
+22:14:56 AUTO-ROLLBACK v3-slow: ['canary degraded share 185/312 vs control 7/1800']; all traffic back on v2
+22:14:56 registered v4-plain (current live: v2)
+22:14:57 shadow: v4-plain scores every request in parallel, results are not returned
+22:14:59 shadow result: {'scored': 150, 'errors': 0, 'overlap_at10_mean': 0.434775, 'shadow_p99_ms_per_replica': [41.91, 47.26, 262.06, 41.66]}
+22:15:00 canary: 10% of users (consistent hash) now get v4-plain
+22:15:20 canary result: control pos_rate 0.2077 p99 75.3ms | canary pos_rate 0.3487 p99 60.5ms | diff CI [+0.0670, +0.2192]
+22:15:20 PROMOTED v4-plain; v2 retired
+v2 promoted []
+v3-slow rolled_back ['canary degraded share 185/312 vs control 7/1800']
+v4-plain promoted []
+{'ttl_0s': {'degraded_labels': {'ranker_timeout_recall_order': 2}, 'requests': 3000, 'achieved_rps': 100.0, 'error_rate': 0.0, 'degraded_rate': 0.00067, 'p50_ms': 10.27, 'p95_ms': 13.66, 'p99_ms': 21.18, 'max_ms': 93.71, 'cache_hits': 0, 'hit_rate': 0.0, 'pipeline_computations': 3000}, 'ttl_30s': {'degraded_labels': {'cache_hit': 2151}, 'requests': 3000, 'achieved_rps': 100.0, 'error_rate': 0.0, 'degraded_rate': 0.717, 'p50_ms': 3.06, 'p95_ms': 17.43, 'p99_ms': 81.35, 'max_ms': 246.31, 'cache_hits': 2151, 'hit_rate': 0.717, 'pipeline_computations': 849}, 'stampede_200_concurrent_same_user': {'ok': 200, 'pipeline_computations': 1}}
+{'events_replayed': 11381, 'seconds': 0.22}

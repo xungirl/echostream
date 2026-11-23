@@ -298,7 +298,7 @@ def control_app(sup: Supervisor) -> FastAPI:
 
 
 async def amain(profile: str, synthetic: dict | None) -> None:
-    run = RUN_DIR
+    run = RUN_DIR.resolve()   # absolute: postgres chdirs into its data dir
     (run / "logs").mkdir(parents=True, exist_ok=True)
     sup = Supervisor(build_specs(CLUSTER, profile, run, synthetic=synthetic), run, CLUSTER)
     sup.start_all()

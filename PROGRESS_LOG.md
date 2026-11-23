@@ -63,3 +63,11 @@ missing) and continue with "Next". Artifacts (models, indexes, per-user metric a
   seed-noise threshold comes from two-tower seeds only). Fake-provider agent: 2/4 correct root causes
   (stale features misread as a stale shard; "dropped" two-tower path still fills leftover slots → "unknown").
 - `make agent-real` (DashScope, ¥2 cap) left for the user.
+
+## Stage 8 — Postgres + safe rollout (done)
+- `results/stage8_rollout.json` (+ `logs_stage8.txt`): v2 (seed refresh) PROMOTED; v3-slow (2000×255 ranker) AUTO-ROLLED BACK
+  (canary degraded share 185/312 from ranker timeouts vs 7/1800 control); v4-plain (no logQ, gate bypassed on purpose) was
+  PROMOTED — the simulated users liked it more (canary 0.349 vs control 0.208 positives/impression), the opposite of the
+  offline gate (Stage 9 blocks the same change on recall@200). Cache (Zipf 1.1, 100 rps): hit rate 71.7%, p50 10.3 → 3.1 ms,
+  p99 21 → 81 ms; 200 concurrent misses → 1 computation. Rebuild from archive: 11,381 events in 0.22 s.
+- Fix during the run: supervisor now uses an absolute run dir (Postgres chdirs into its data dir; relative socket path failed).
