@@ -193,3 +193,36 @@ Pre-registered comparisons (between subjects, Holm): C1 V4−V3 −0.021 [−0.0
 Within subjects: V4−V3 −0.034 [−0.037, −0.030]; V5−V4 +0.0013 [0.0004, 0.0021].
 Rank agreement with the online order: big-matrix NDCG@10 Kendall τ = −0.4 (7/10 pairs disagree); small-matrix slate-1
 NDCG@10 τ = +0.6.
+
+### Stage 8 — rollout, cache, rebuild (`make stage8` → `results/stage8_rollout.json`, `results/logs_stage8.txt`)
+Cluster + Postgres; workers archive events. Shadow: 150 simulated users × 1 slate. Canary: 10% of users by hash, all
+1,411 small-matrix users × 3 slates (16 concurrent sessions), decision rule in `echostream/rollout/controller.py`.
+
+| version | change | shadow | canary vs control | decision |
+|---|---|---|---|---|
+| v2 | two-tower retrained, seed 1 | overlap@10 0.69, 0 errors | pos/impr 0.333 vs 0.343, CI [−0.069, +0.044]; p99 44.7 vs 52.1 ms | promoted |
+| v3-slow | 2,000 × 255-leaf ranker | p99 207–427 ms per replica | degraded 185/312 vs 7/1,800; p99 199.7 vs 120.4 ms | **auto-rollback** |
+| v4-plain | no logQ two-tower (gate bypassed) | overlap@10 0.43 | pos/impr 0.349 vs 0.208, CI [+0.067, +0.219] | promoted (offline gate would block) |
+
+Caveat: each canary arm has ~100–130 simulated users with at least one observed impression (KuaiRec's small matrix covers
+3,327 of 10,728 videos, so many recommended videos have no simulated response), and the same users are reused across the
+three rollouts.
+
+Cache (Zipf s = 1.1 over users, 100 rps, 30 s, through nginx): TTL 0 → p50 10.27 / p99 21.18 ms; TTL 30 s (±20% jitter) →
+hit rate 71.7%, p50 3.06 / p99 81.35 ms, 849 pipeline computations for 3,000 requests. 200 concurrent requests for one
+uncached user → 1 computation. Rebuild of the feature store from 11,381 archived events: 0.22 s.
+
+### Stage 9 — regression gate + agent (`make release-guard` → `results/stage9_release_guard.json`, quality)
+Baseline run NDCG@10 0.1100, recall@200 0.2327 (6,607 users). Threshold = max(paired CI half-width, seed std from Stage 2:
+NDCG@10 0.0018, recall@200 0.0035).
+
+| candidate | kind | ΔNDCG@10 | Δrecall@200 | gate | agent root cause |
+|---|---|---|---|---|---|
+| logQ removed | regression | −0.0013 | −0.0599 | blocked | retrieval_model_regression ✓ |
+| stale item features (Aug 15) | regression | −0.0714 | 0 | blocked | stale_shard_index ✗ |
+| two-tower quota 0 | regression | +0.0010 | −0.0158 | blocked | unknown ✗ |
+| ranker label bug (wr > 0.5) | regression | −0.0238 | 0 | blocked | ranker_regression ✓ |
+| shard 2 stale vectors | regression | −0.0002 | +0.0011 | passed (missed) | – |
+| two-tower seed 1 | harmless | +0.0002 | +0.0039 | passed | – |
+| ranker reseed | harmless | −0.0023 | 0 | blocked (false alarm) | ranker_regression |
+| quota tweak | harmless | 0.0000 | +0.0018 | passed | – |

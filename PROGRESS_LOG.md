@@ -71,3 +71,9 @@ missing) and continue with "Next". Artifacts (models, indexes, per-user metric a
   offline gate (Stage 9 blocks the same change on recall@200). Cache (Zipf 1.1, 100 rps): hit rate 71.7%, p50 10.3 → 3.1 ms,
   p99 21 → 81 ms; 200 concurrent misses → 1 computation. Rebuild from archive: 11,381 events in 0.22 s.
 - Fix during the run: supervisor now uses an absolute run dir (Postgres chdirs into its data dir; relative socket path failed).
+
+## Stage 10 — web demo (done) · Stage 11 — docs (done)
+- `web/` (Vite+React+TS, 13 vitest tests), `make demo`, screenshots in `docs/screenshots/` (retaken with the brand header).
+- Brand assets in `docs/brand/` (from the user; do not edit). README starts with the bilingual lockup.
+- README (journey 0–10, key metrics, architecture, trade-offs, limitations), BENCHMARK.md, INTERVIEW.md, DRILLS.md final.
+- Left to the user: `make agent-real` (DashScope key, ¥2 cap). Nothing pushed; no remote.

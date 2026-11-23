@@ -99,8 +99,8 @@ It runs on **KuaiRec**, a real short-video interaction dataset released by Kuais
 - [x] Stage 5 · Distributed serving, load & chaos tests · 分布式服务、压测与故障注入 — **MVP**
 - [x] Stage 6 · MMR re-ranking · MMR 重排
 - [x] Stage 7 · Simulated online A/B (pre-registered) · 模拟线上 A/B（预注册）
-- [ ] Stage 8 · Postgres, caching, shadow / canary / rollback · Postgres、缓存、影子 / 灰度 / 回滚
-- [ ] Stage 9 · Release-guard agent · 发布守门 agent
+- [x] Stage 8 · Postgres, caching, shadow / canary / rollback · Postgres、缓存、影子 / 灰度 / 回滚
+- [x] Stage 9 · Release-guard agent · 发布守门 agent
 - [x] Stage 10 · Web demo · 网页 demo
 - [ ] Next · E-commerce domain adapter (Amazon Reviews 2023) · 电商领域适配器
 
@@ -222,6 +222,42 @@ Each stage: goal → decision & alternatives → built → verified → measured
 - 中文：预注册的模拟 A/B 推翻了「排序一定更好」：在无曝光偏差的全观测用户上，排序比双塔差；离线大矩阵排名和模拟线上排名
   Kendall τ = −0.4。这是离线-线上不一致的真实案例。
 
+### Stage 8 — Postgres, caching, safe rollout
+- **Goal:** one source of truth, and model releases that cannot take the feed down.
+- **Decisions:** Postgres holds users, videos, the model registry, rollout state, experiment config and an event archive
+  (workers write it in batches *before* acking); Redis holds only derived data and can be rebuilt
+  (`python -m echostream.store.rebuild`). Every API replica and shard reconciles once per second to the desired rollout row
+  (hot bundle load, no restarts). Rollout = register → shadow (new model scores every request off the response path) →
+  canary (10% of users by consistent hash; the live cluster is driven by simulated small-matrix users) → promote, or
+  automatic rollback on error rate, p99 > max(50 ms, 2× control), degraded share +5 pp, or a significantly worse online metric.
+- **Measured (`results/stage8_rollout.json`; systems + simulated online):**
+  - v2 (two-tower refresh, new seed): shadow overlap@10 0.69 → canary diff CI [−0.069, +0.044] → **promoted**.
+  - v3-slow (2,000-tree × 255-leaf ranker, fine offline): shadow p99 207–427 ms → canary **185/312 responses degraded**
+    (ranker timeouts) vs 7/1,800 control → **auto-rolled back**, all traffic back on v2 about 1 s after the decision (log: 22:14:55 → 22:14:56).
+  - v4-plain (two-tower without logQ, offline gate deliberately bypassed): the simulated canary users liked it *more*
+    (0.349 vs 0.208 positives/impression, CI [+0.067, +0.219]) → **promoted**. The offline gate (Stage 9) blocks the same
+    change (recall@200 −0.060). Another offline-vs-simulated disagreement, kept as found.
+  - Cache (Zipf 1.1 users, 100 rps, 30 s): hit rate 71.7%, p50 10.3 → 3.1 ms, but p99 21 → 81 ms; 200 concurrent misses for one
+    user → **1** pipeline computation (single-flight + Redis lock). Rebuild: 11,381 archived events in 0.22 s; integration test
+    shows identical counters and per-user order after a wipe.
+- **Problem → fix:** Postgres refused to start from a relative run dir (it chdirs into its data dir) → absolute paths.
+- 中文：Postgres 做事实来源 + 归档重建；影子 → 灰度 → 晋升/自动回滚：慢模型被自动回滚；去掉 logQ 的模型在模拟灰度里反而更好被晋升，
+  但离线门禁会拦——如实记录。缓存命中 71.7%、p50 降到 3.1 ms 但 p99 变差；200 个并发未命中只算 1 次。
+
+### Stage 9 — Release-guard agent
+- **Goal:** block bad models before canary and explain why.
+- **Built:** `make eval` → `results/history.jsonl`; a regression gate whose threshold is max(paired-bootstrap CI half-width,
+  measured seed std); a hand-written tool loop (diff runs, slices by activity / cold items / category, per-path recall,
+  data freshness, shard health) with a deterministic fake provider for CI and a DashScope provider behind a ¥2 token ledger.
+- **Measured (`results/stage9_release_guard.json`):** 5 real regressions + 3 harmless changes. Gate **recall 0.8, precision 0.8**:
+  blocked logQ removed (recall@200 −0.060), stale item features (NDCG@10 −0.071), dropped two-tower quota (recall@200 −0.016),
+  label-threshold bug in ranker training (NDCG@10 −0.024); **missed** a shard serving last month's vectors (no measurable offline
+  effect: Δ −0.0002); **false alarm** on a ranker retrained with another seed (−0.0023 > the 0.0018 seed noise, which was measured
+  for the two-tower only). Agent: right root cause for **2 of 4** blocked regressions (logQ, label bug); it misread stale features
+  as a stale shard (shard heuristic too sensitive) and returned "unknown" for the dropped path (a zero quota still fills
+  leftover slots). Reports: `results/incidents/`. The real-LLM run is left to `make agent-real`.
+- 中文：回归门禁召回 0.8 / 精确 0.8；规则版 agent 4 个里猜对 2 个。失败原因都写清楚了（种子噪声只测了双塔、分片规则太敏感）。
+
 ### Stage 10 — Web demo
 - **Goal:** make a backend visible: the echo of a swipe, the latency of each stage, the cluster under failure.
 - **Built:** `web/` (Vite + React + TypeScript, no UI/chart libraries): Feed (pick a user → cards with recall-source badges →
@@ -252,6 +288,14 @@ Each stage: goal → decision & alternatives → built → verified → measured
 | replay correctness | 0 / 7,176 users with mismatched counters | real-replay | feature store vs parquet ground truth | `results/stage5_replay_full.json` |
 | event → feature latency at 10k events/s | p99 ≤ 50 ms (bucket bound) | real-replay | worker histogram | `results/stage5_replay_paced10k.json` |
 | 10M vectors: per-shard vectors at 1 → 8 shards | 2,519 → 315 MB | synthetic | computed size; RSS also stored | `results/stage5_synthetic.json` |
+| MMR λ=0.7: category diversity@10 / NDCG@10 | 0.746 → 0.896 / 0.1100 → 0.1099 (n.s.) | quality | λ sweep, pre-written rule | `results/stage6_mmr.json` |
+| offline vs simulated-online ranking of 5 variants | Kendall τ = −0.4 | quality/simulated | pre-registered, 1,411 users | `results/stage7_ab.json` |
+| simulated online: ranker vs two-tower (paired) | −0.034 [−0.037, −0.030] | quality/simulated | positives per impression | `results/stage7_ab.json` |
+| slow-ranker rollout | auto-rolled back (185/312 degraded) | systems | canary 10% | `results/stage8_rollout.json` |
+| cache under Zipf traffic | 71.7% hits, p50 10.3 → 3.1 ms, p99 21 → 81 ms | systems | 100 rps, 30 s | `results/stage8_rollout.json` |
+| stampede: 200 concurrent misses | 1 computation | systems | single-flight + lock | `results/stage8_rollout.json` |
+| regression gate (5 regressions, 3 harmless) | recall 0.8, precision 0.8 | quality | paired bootstrap + seed noise | `results/stage9_release_guard.json` |
+| agent root cause (fake provider) | 2 / 4 correct | quality | tool traces in incidents/ | `results/stage9_release_guard.json` |
 
 ## Next steps · 下一步
 
