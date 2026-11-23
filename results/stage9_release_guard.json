@@ -1,0 +1,890 @@
+{
+  "baseline_run": "20261122-220533-baseline",
+  "rows": [
+    {
+      "candidate": "logq_removed",
+      "kind": "regression",
+      "expected_root_cause": "retrieval_model_regression",
+      "blocked": true,
+      "gate": {
+        "promote": false,
+        "reasons": [
+          "recall@200: 0.2327 -> 0.1728 (delta -0.0599, 95% CI [-0.0625, -0.0573], noise threshold 0.0034)"
+        ],
+        "base_run": "20261122-220533-baseline",
+        "candidate_run": "20261122-220601-logq_removed",
+        "checks": [
+          {
+            "metric": "ndcg@10",
+            "baseline": 0.11001768881453788,
+            "candidate": 0.10876018287383245,
+            "delta": -0.00125750594070544,
+            "ci_low": -0.0025944246332296685,
+            "ci_high": 7.617987042710464e-05,
+            "threshold": 0.00179,
+            "regressed": false
+          },
+          {
+            "metric": "recall@200",
+            "baseline": 0.23271530168941962,
+            "candidate": 0.17282787779220907,
+            "delta": -0.05988742389721054,
+            "ci_low": -0.06251241482925562,
+            "ci_high": -0.057298536710678805,
+            "threshold": 0.00345,
+            "regressed": true
+          }
+        ]
+      },
+      "metrics": {
+        "recall@10": {
+          "mean": 0.07258,
+          "ci95": [
+            0.06981,
+            0.07568
+          ]
+        },
+        "recall@200": {
+          "mean": 0.17283,
+          "ci95": [
+            0.16899,
+            0.17686
+          ]
+        },
+        "ndcg@10": {
+          "mean": 0.10876,
+          "ci95": [
+            0.10517,
+            0.11256
+          ]
+        },
+        "hit@10": {
+          "mean": 0.46375,
+          "ci95": [
+            0.45224,
+            0.47662
+          ]
+        },
+        "diversity@10": {
+          "mean": 0.77013,
+          "ci95": [
+            0.76641,
+            0.77352
+          ]
+        },
+        "coverage@10": {
+          "mean": 0.0508
+        }
+      },
+      "agent": {
+        "root_cause": "retrieval_model_regression",
+        "report_path": "/Users/xunxun/echostream/results/incidents/20261122-220938-20261122-220601-logq_removed.md",
+        "trace": [
+          {
+            "tool": "diff_runs",
+            "args": {
+              "run_id": "20261122-220601-logq_removed",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "path_contribution",
+            "args": {
+              "run_id": "20261122-220601-logq_removed",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "data_freshness",
+            "args": {
+              "run_id": "20261122-220601-logq_removed"
+            }
+          },
+          {
+            "tool": "shard_health",
+            "args": {
+              "run_id": "20261122-220601-logq_removed",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "slice_metrics",
+            "args": {
+              "run_id": "20261122-220601-logq_removed",
+              "by": "activity_bucket",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "slice_metrics",
+            "args": {
+              "run_id": "20261122-220601-logq_removed",
+              "by": "cold_items",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "write_report"
+          }
+        ],
+        "steps": 7
+      },
+      "agent_correct": true
+    },
+    {
+      "candidate": "stale_item_features",
+      "kind": "regression",
+      "expected_root_cause": "stale_features",
+      "blocked": true,
+      "gate": {
+        "promote": false,
+        "reasons": [
+          "ndcg@10: 0.1100 -> 0.0386 (delta -0.0714, 95% CI [-0.0745, -0.0682], noise threshold 0.0031)"
+        ],
+        "base_run": "20261122-220533-baseline",
+        "candidate_run": "20261122-220631-stale_item_features",
+        "checks": [
+          {
+            "metric": "ndcg@10",
+            "baseline": 0.11001768881453788,
+            "candidate": 0.03864027063576651,
+            "delta": -0.07137741817877136,
+            "ci_low": -0.07445957403713138,
+            "ci_high": -0.0681931300619248,
+            "threshold": 0.0031332219876032893,
+            "regressed": true
+          },
+          {
+            "metric": "recall@200",
+            "baseline": 0.23271530168941962,
+            "candidate": 0.23271530168941962,
+            "delta": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.0,
+            "threshold": 0.00345,
+            "regressed": false
+          }
+        ]
+      },
+      "metrics": {
+        "recall@10": {
+          "mean": 0.02591,
+          "ci95": [
+            0.02419,
+            0.02763
+          ]
+        },
+        "recall@200": {
+          "mean": 0.23272,
+          "ci95": [
+            0.22816,
+            0.23735
+          ]
+        },
+        "ndcg@10": {
+          "mean": 0.03864,
+          "ci95": [
+            0.03668,
+            0.04087
+          ]
+        },
+        "hit@10": {
+          "mean": 0.23203,
+          "ci95": [
+            0.22158,
+            0.24247
+          ]
+        },
+        "diversity@10": {
+          "mean": 0.80251,
+          "ci95": [
+            0.7986,
+            0.80646
+          ]
+        },
+        "coverage@10": {
+          "mean": 0.05574
+        }
+      },
+      "agent": {
+        "root_cause": "stale_shard_index",
+        "report_path": "/Users/xunxun/echostream/results/incidents/20261122-220938-20261122-220631-stale_item_features.md",
+        "trace": [
+          {
+            "tool": "diff_runs",
+            "args": {
+              "run_id": "20261122-220631-stale_item_features",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "path_contribution",
+            "args": {
+              "run_id": "20261122-220631-stale_item_features",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "data_freshness",
+            "args": {
+              "run_id": "20261122-220631-stale_item_features"
+            }
+          },
+          {
+            "tool": "shard_health",
+            "args": {
+              "run_id": "20261122-220631-stale_item_features",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "slice_metrics",
+            "args": {
+              "run_id": "20261122-220631-stale_item_features",
+              "by": "activity_bucket",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "slice_metrics",
+            "args": {
+              "run_id": "20261122-220631-stale_item_features",
+              "by": "cold_items",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "write_report"
+          }
+        ],
+        "steps": 7
+      },
+      "agent_correct": false
+    },
+    {
+      "candidate": "dropped_two_tower_path",
+      "kind": "regression",
+      "expected_root_cause": "dropped_recall_path",
+      "blocked": true,
+      "gate": {
+        "promote": false,
+        "reasons": [
+          "recall@200: 0.2327 -> 0.2169 (delta -0.0158, 95% CI [-0.0184, -0.0134], noise threshold 0.0034)"
+        ],
+        "base_run": "20261122-220533-baseline",
+        "candidate_run": "20261122-220702-dropped_two_tower_path",
+        "checks": [
+          {
+            "metric": "ndcg@10",
+            "baseline": 0.11001768881453788,
+            "candidate": 0.11106007544536096,
+            "delta": 0.0010423866308230819,
+            "ci_low": 0.0004046770368185183,
+            "ci_high": 0.0016745508582600291,
+            "threshold": 0.00179,
+            "regressed": false
+          },
+          {
+            "metric": "recall@200",
+            "baseline": 0.23271530168941962,
+            "candidate": 0.21687076384871914,
+            "delta": -0.01584453784070042,
+            "ci_low": -0.01841768260667354,
+            "ci_high": -0.01339184488372479,
+            "threshold": 0.00345,
+            "regressed": true
+          }
+        ]
+      },
+      "metrics": {
+        "recall@10": {
+          "mean": 0.07539,
+          "ci95": [
+            0.07247,
+            0.07825
+          ]
+        },
+        "recall@200": {
+          "mean": 0.21687,
+          "ci95": [
+            0.21262,
+            0.22114
+          ]
+        },
+        "ndcg@10": {
+          "mean": 0.11106,
+          "ci95": [
+            0.1075,
+            0.11473
+          ]
+        },
+        "hit@10": {
+          "mean": 0.47556,
+          "ci95": [
+            0.46314,
+            0.48782
+          ]
+        },
+        "diversity@10": {
+          "mean": 0.74992,
+          "ci95": [
+            0.74548,
+            0.75414
+          ]
+        },
+        "coverage@10": {
+          "mean": 0.03468
+        }
+      },
+      "agent": {
+        "root_cause": "unknown",
+        "report_path": "/Users/xunxun/echostream/results/incidents/20261122-220938-20261122-220702-dropped_two_tower_path.md",
+        "trace": [
+          {
+            "tool": "diff_runs",
+            "args": {
+              "run_id": "20261122-220702-dropped_two_tower_path",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "path_contribution",
+            "args": {
+              "run_id": "20261122-220702-dropped_two_tower_path",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "data_freshness",
+            "args": {
+              "run_id": "20261122-220702-dropped_two_tower_path"
+            }
+          },
+          {
+            "tool": "shard_health",
+            "args": {
+              "run_id": "20261122-220702-dropped_two_tower_path",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "slice_metrics",
+            "args": {
+              "run_id": "20261122-220702-dropped_two_tower_path",
+              "by": "activity_bucket",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "slice_metrics",
+            "args": {
+              "run_id": "20261122-220702-dropped_two_tower_path",
+              "by": "cold_items",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "write_report"
+          }
+        ],
+        "steps": 7
+      },
+      "agent_correct": false
+    },
+    {
+      "candidate": "label_threshold_bug",
+      "kind": "regression",
+      "expected_root_cause": "ranker_regression",
+      "blocked": true,
+      "gate": {
+        "promote": false,
+        "reasons": [
+          "ndcg@10: 0.1100 -> 0.0862 (delta -0.0238, 95% CI [-0.0263, -0.0213], noise threshold 0.0025)"
+        ],
+        "base_run": "20261122-220533-baseline",
+        "candidate_run": "20261122-220735-label_threshold_bug",
+        "checks": [
+          {
+            "metric": "ndcg@10",
+            "baseline": 0.11001768881453788,
+            "candidate": 0.08618189411899216,
+            "delta": -0.02383579469554571,
+            "ci_low": -0.02625253631005417,
+            "ci_high": -0.02128191356902529,
+            "threshold": 0.002485311370514439,
+            "regressed": true
+          },
+          {
+            "metric": "recall@200",
+            "baseline": 0.23271530168941962,
+            "candidate": 0.23271530168941962,
+            "delta": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.0,
+            "threshold": 0.00345,
+            "regressed": false
+          }
+        ]
+      },
+      "metrics": {
+        "recall@10": {
+          "mean": 0.06168,
+          "ci95": [
+            0.05908,
+            0.06438
+          ]
+        },
+        "recall@200": {
+          "mean": 0.23272,
+          "ci95": [
+            0.22816,
+            0.23735
+          ]
+        },
+        "ndcg@10": {
+          "mean": 0.08618,
+          "ci95": [
+            0.08295,
+            0.08926
+          ]
+        },
+        "hit@10": {
+          "mean": 0.42364,
+          "ci95": [
+            0.41199,
+            0.43575
+          ]
+        },
+        "diversity@10": {
+          "mean": 0.76985,
+          "ci95": [
+            0.76568,
+            0.77385
+          ]
+        },
+        "coverage@10": {
+          "mean": 0.05416
+        }
+      },
+      "agent": {
+        "root_cause": "ranker_regression",
+        "report_path": "/Users/xunxun/echostream/results/incidents/20261122-220938-20261122-220735-label_threshold_bug.md",
+        "trace": [
+          {
+            "tool": "diff_runs",
+            "args": {
+              "run_id": "20261122-220735-label_threshold_bug",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "path_contribution",
+            "args": {
+              "run_id": "20261122-220735-label_threshold_bug",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "data_freshness",
+            "args": {
+              "run_id": "20261122-220735-label_threshold_bug"
+            }
+          },
+          {
+            "tool": "shard_health",
+            "args": {
+              "run_id": "20261122-220735-label_threshold_bug",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "slice_metrics",
+            "args": {
+              "run_id": "20261122-220735-label_threshold_bug",
+              "by": "activity_bucket",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "slice_metrics",
+            "args": {
+              "run_id": "20261122-220735-label_threshold_bug",
+              "by": "cold_items",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "write_report"
+          }
+        ],
+        "steps": 7
+      },
+      "agent_correct": true
+    },
+    {
+      "candidate": "stale_shard2_index",
+      "kind": "regression",
+      "expected_root_cause": "stale_shard_index",
+      "blocked": false,
+      "gate": {
+        "promote": true,
+        "reasons": [],
+        "base_run": "20261122-220533-baseline",
+        "candidate_run": "20261122-220804-stale_shard2_index",
+        "checks": [
+          {
+            "metric": "ndcg@10",
+            "baseline": 0.11001768881453788,
+            "candidate": 0.10979124868881768,
+            "delta": -0.0002264401257201968,
+            "ci_low": -0.0013193425546263477,
+            "ci_high": 0.0008772692649491753,
+            "threshold": 0.00179,
+            "regressed": false
+          },
+          {
+            "metric": "recall@200",
+            "baseline": 0.23271530168941962,
+            "candidate": 0.23380846409748934,
+            "delta": 0.001093162408069754,
+            "ci_low": -0.00041155884847746414,
+            "ci_high": 0.0025519301220983405,
+            "threshold": 0.00345,
+            "regressed": false
+          }
+        ]
+      },
+      "metrics": {
+        "recall@10": {
+          "mean": 0.07399,
+          "ci95": [
+            0.07117,
+            0.07687
+          ]
+        },
+        "recall@200": {
+          "mean": 0.23381,
+          "ci95": [
+            0.22948,
+            0.23862
+          ]
+        },
+        "ndcg@10": {
+          "mean": 0.10979,
+          "ci95": [
+            0.10622,
+            0.1135
+          ]
+        },
+        "hit@10": {
+          "mean": 0.47298,
+          "ci95": [
+            0.46072,
+            0.486
+          ]
+        },
+        "diversity@10": {
+          "mean": 0.7823,
+          "ci95": [
+            0.77888,
+            0.78565
+          ]
+        },
+        "coverage@10": {
+          "mean": 0.0357
+        }
+      }
+    },
+    {
+      "candidate": "two_tower_seed1",
+      "kind": "harmless",
+      "expected_root_cause": null,
+      "blocked": false,
+      "gate": {
+        "promote": true,
+        "reasons": [],
+        "base_run": "20261122-220533-baseline",
+        "candidate_run": "20261122-220835-two_tower_seed1",
+        "checks": [
+          {
+            "metric": "ndcg@10",
+            "baseline": 0.11001768881453788,
+            "candidate": 0.11024989578804557,
+            "delta": 0.00023220697350770028,
+            "ci_low": -0.0005736573162392193,
+            "ci_high": 0.0009955152413207097,
+            "threshold": 0.00179,
+            "regressed": false
+          },
+          {
+            "metric": "recall@200",
+            "baseline": 0.23271530168941962,
+            "candidate": 0.2366177169522503,
+            "delta": 0.0039024152628307244,
+            "ci_low": 0.0020611332036097746,
+            "ci_high": 0.0056327768018242024,
+            "threshold": 0.00345,
+            "regressed": false
+          }
+        ]
+      },
+      "metrics": {
+        "recall@10": {
+          "mean": 0.07476,
+          "ci95": [
+            0.07187,
+            0.0777
+          ]
+        },
+        "recall@200": {
+          "mean": 0.23662,
+          "ci95": [
+            0.23205,
+            0.24141
+          ]
+        },
+        "ndcg@10": {
+          "mean": 0.11025,
+          "ci95": [
+            0.10649,
+            0.11395
+          ]
+        },
+        "hit@10": {
+          "mean": 0.47374,
+          "ci95": [
+            0.46163,
+            0.48585
+          ]
+        },
+        "diversity@10": {
+          "mean": 0.74386,
+          "ci95": [
+            0.73946,
+            0.74795
+          ]
+        },
+        "coverage@10": {
+          "mean": 0.03738
+        }
+      }
+    },
+    {
+      "candidate": "ranker_reseed",
+      "kind": "harmless",
+      "expected_root_cause": null,
+      "blocked": true,
+      "gate": {
+        "promote": false,
+        "reasons": [
+          "ndcg@10: 0.1100 -> 0.1077 (delta -0.0023, 95% CI [-0.0040, -0.0007], noise threshold 0.0018)"
+        ],
+        "base_run": "20261122-220533-baseline",
+        "candidate_run": "20261122-220907-ranker_reseed",
+        "checks": [
+          {
+            "metric": "ndcg@10",
+            "baseline": 0.11001768881453788,
+            "candidate": 0.10771393407504654,
+            "delta": -0.00230375473949135,
+            "ci_low": -0.0039640662964468935,
+            "ci_high": -0.000683324907425686,
+            "threshold": 0.00179,
+            "regressed": true
+          },
+          {
+            "metric": "recall@200",
+            "baseline": 0.23271530168941962,
+            "candidate": 0.23271530168941962,
+            "delta": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.0,
+            "threshold": 0.00345,
+            "regressed": false
+          }
+        ]
+      },
+      "metrics": {
+        "recall@10": {
+          "mean": 0.07494,
+          "ci95": [
+            0.07185,
+            0.07794
+          ]
+        },
+        "recall@200": {
+          "mean": 0.23272,
+          "ci95": [
+            0.22816,
+            0.23735
+          ]
+        },
+        "ndcg@10": {
+          "mean": 0.10771,
+          "ci95": [
+            0.10384,
+            0.11146
+          ]
+        },
+        "hit@10": {
+          "mean": 0.47298,
+          "ci95": [
+            0.46027,
+            0.4854
+          ]
+        },
+        "diversity@10": {
+          "mean": 0.75072,
+          "ci95": [
+            0.74627,
+            0.75515
+          ]
+        },
+        "coverage@10": {
+          "mean": 0.03906
+        }
+      },
+      "agent": {
+        "root_cause": "ranker_regression",
+        "report_path": "/Users/xunxun/echostream/results/incidents/20261122-220938-20261122-220907-ranker_reseed.md",
+        "trace": [
+          {
+            "tool": "diff_runs",
+            "args": {
+              "run_id": "20261122-220907-ranker_reseed",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "path_contribution",
+            "args": {
+              "run_id": "20261122-220907-ranker_reseed",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "data_freshness",
+            "args": {
+              "run_id": "20261122-220907-ranker_reseed"
+            }
+          },
+          {
+            "tool": "shard_health",
+            "args": {
+              "run_id": "20261122-220907-ranker_reseed",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "slice_metrics",
+            "args": {
+              "run_id": "20261122-220907-ranker_reseed",
+              "by": "activity_bucket",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "slice_metrics",
+            "args": {
+              "run_id": "20261122-220907-ranker_reseed",
+              "by": "cold_items",
+              "base_run_id": "20261122-220533-baseline"
+            }
+          },
+          {
+            "tool": "write_report"
+          }
+        ],
+        "steps": 7
+      },
+      "agent_correct": false
+    },
+    {
+      "candidate": "quota_tweak",
+      "kind": "harmless",
+      "expected_root_cause": null,
+      "blocked": false,
+      "gate": {
+        "promote": true,
+        "reasons": [],
+        "base_run": "20261122-220533-baseline",
+        "candidate_run": "20261122-220937-quota_tweak",
+        "checks": [
+          {
+            "metric": "ndcg@10",
+            "baseline": 0.11001768881453788,
+            "candidate": 0.11001416239758806,
+            "delta": -3.5264169498131302e-06,
+            "ci_low": -0.00011241244940382085,
+            "ci_high": 0.00011517655029219804,
+            "threshold": 0.00179,
+            "regressed": false
+          },
+          {
+            "metric": "recall@200",
+            "baseline": 0.23271530168941962,
+            "candidate": 0.23447791013845545,
+            "delta": 0.0017626084490358878,
+            "ci_low": 0.0013437249302435826,
+            "ci_high": 0.002240394093960668,
+            "threshold": 0.00345,
+            "regressed": false
+          }
+        ]
+      },
+      "metrics": {
+        "recall@10": {
+          "mean": 0.07463,
+          "ci95": [
+            0.07172,
+            0.07757
+          ]
+        },
+        "recall@200": {
+          "mean": 0.23448,
+          "ci95": [
+            0.22997,
+            0.23918
+          ]
+        },
+        "ndcg@10": {
+          "mean": 0.11001,
+          "ci95": [
+            0.10632,
+            0.11361
+          ]
+        },
+        "hit@10": {
+          "mean": 0.47268,
+          "ci95": [
+            0.46042,
+            0.48494
+          ]
+        },
+        "diversity@10": {
+          "mean": 0.74637,
+          "ci95": [
+            0.74194,
+            0.75054
+          ]
+        },
+        "coverage@10": {
+          "mean": 0.03542
+        }
+      }
+    }
+  ],
+  "gate": {
+    "regressions": 5,
+    "harmless": 3,
+    "true_positives": 4,
+    "false_positives": 1,
+    "recall": 0.8,
+    "precision": 0.8
+  },
+  "agent": {
+    "diagnosed": 4,
+    "correct_root_cause": 2
+  },
+  "runtime_sec": 415.8
+}

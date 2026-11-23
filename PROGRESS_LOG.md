@@ -55,3 +55,11 @@ missing) and continue with "Next". Artifacts (models, indexes, per-user metric a
 - Between-subjects A/B (~280 users/arm): only C4 (ALS > popularity, +0.066) is significant after Holm. H1 (rank > two-tower)
   NOT supported: −0.021 [−0.043, +0.001]; within-subjects the ranker is significantly worse (−0.034 [−0.037, −0.030]).
 - Offline (big-matrix NDCG@10) vs simulated-online ranking: Kendall τ = −0.4; small-matrix single-slate vs online τ = +0.6.
+
+## Stage 8 prep + Stage 9 — release guard (done)
+- `scripts/stage8_prepare_bundles.py` built bundles v2 (two-tower seed 1), v3-slow (2000×255 ranker), v4-plain (no logQ).
+- `results/stage9_release_guard.json`, `results/history.jsonl`, `results/incidents/*.md`. Gate recall 0.8 (4/5 regressions
+  blocked; stale shard-2 index had no measurable offline effect and passed), precision 0.8 (ranker reseed blocked: the
+  seed-noise threshold comes from two-tower seeds only). Fake-provider agent: 2/4 correct root causes
+  (stale features misread as a stale shard; "dropped" two-tower path still fills leftover slots → "unknown").
+- `make agent-real` (DashScope, ¥2 cap) left for the user.

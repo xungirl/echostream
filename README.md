@@ -30,6 +30,12 @@ It runs on **KuaiRec**, a real short-video interaction dataset released by Kuais
 
 ---
 
+## Screenshots · 截图
+
+| live feed after a skip | chaos: shard 0 slow on both replicas + feature node frozen |
+|---|---|
+| ![feed](docs/screenshots/feed_after_skip.png) | ![chaos](docs/screenshots/feed_degraded_chaos.png) |
+
 ## How a request flows · 一次请求怎么走
 
 ```
@@ -95,11 +101,11 @@ It runs on **KuaiRec**, a real short-video interaction dataset released by Kuais
 - [x] Stage 3 · Multi-path recall & cold start · 多路召回与冷启动
 - [x] Stage 4 · Ranking · 排序
 - [x] Stage 5 · Distributed serving, load & chaos tests · 分布式服务、压测与故障注入 — **MVP**
-- [ ] Stage 6 · MMR re-ranking · MMR 重排
-- [ ] Stage 7 · Simulated online A/B (pre-registered) · 模拟线上 A/B（预注册）
+- [x] Stage 6 · MMR re-ranking · MMR 重排
+- [x] Stage 7 · Simulated online A/B (pre-registered) · 模拟线上 A/B（预注册）
 - [ ] Stage 8 · Postgres, caching, shadow / canary / rollback · Postgres、缓存、影子 / 灰度 / 回滚
 - [ ] Stage 9 · Release-guard agent · 发布守门 agent
-- [ ] Stage 10 · Web demo · 网页 demo
+- [x] Stage 10 · Web demo · 网页 demo
 - [ ] Next · E-commerce domain adapter (Amazon Reviews 2023) · 电商领域适配器
 
 ---
@@ -193,6 +199,45 @@ Each stage: goal → decision & alternatives → built → verified → measured
   (both kept).
 - 中文：自写进程管理器 + nginx + 分片向量检索（副本、超时、摘除）+ 分区事件流（租约保证用户内有序、Lua 幂等）+ 分片特征库。
   200 rps 下 p99 26 ms；15 次故障注入全部 100% 可用；1,253 万条真实事件重放 3.7 万条/秒、逐用户计数零误差。
+
+### Stage 6 — MMR re-ranking
+- **Goal:** less repetitive pages without paying in relevance.
+- **Decision:** MMR over the ranker's top-50, similarity = mean(category Jaccard, caption cosine); λ chosen by a rule written
+  before the sweep: the most diverse λ whose NDCG@10 drop vs λ = 1 is not significant (paired CI contains 0).
+- **Measured (quality, `results/stage6_mmr.json`):** λ = 0.7 → NDCG@10 0.1099 vs 0.1100 (Δ −0.0001, CI contains 0),
+  category diversity@10 **0.746 → 0.896**, coverage@10 0.0355 → 0.0390. Below λ = 0.6 relevance falls (λ = 0.3: −0.0148).
+- 中文：MMR 在 λ=0.7 时类别多样性从 0.746 提到 0.896，NDCG@10 基本不变（差值 CI 含 0）。
+
+### Stage 7 — Simulated online A/B (pre-registered)
+- **Goal:** check whether offline wins survive a setting with session dynamics and no exposure bias.
+- **Decision:** `PREREG.md` (hypotheses, variants, metric, analysis, stopping rule) was committed before the run. The simulator
+  shows 5 slates × 10 videos to each of the 1,411 fully-observed users; the response is the user's true watch_ratio; positives
+  update the history between slates. Assignment by consistent-hash buckets (20 per variant).
+- **Measured (quality/simulated, `results/stage7_ab.json`):** positives per impression (within-subjects, 95% CI):
+  popularity 0.158 · ALS **0.214** · two-tower **0.213** · recall+rank 0.179 · recall+rank+MMR 0.180.
+  Between-subjects A/B (~280 users/arm, Holm-corrected): only ALS > popularity (+0.066) is significant; rank − two-tower =
+  −0.021 [−0.043, +0.001] (H1 not supported). Within-subjects the ranker is significantly *worse* than the two-tower
+  (−0.034 [−0.037, −0.030]); MMR is +0.0013 [0.0004, 0.0021] over rank.
+- **Offline vs online:** big-matrix test NDCG@10 orders the variants with Kendall τ = **−0.4** against the simulated online
+  order (7 of 10 pairs disagree); the small matrix's own single-slate NDCG@10 agrees much better (τ = +0.6).
+- **Interpretation (hypothesis, not proven):** the ranker learned "what the platform will expose *and* the user will like"
+  (item exposure/popularity features dominate its importance) — a big win on the exposure-biased log, a loss for users who
+  saw everything. No deviations from the pre-registration.
+- 中文：预注册的模拟 A/B 推翻了「排序一定更好」：在无曝光偏差的全观测用户上，排序比双塔差；离线大矩阵排名和模拟线上排名
+  Kendall τ = −0.4。这是离线-线上不一致的真实案例。
+
+### Stage 10 — Web demo
+- **Goal:** make a backend visible: the echo of a swipe, the latency of each stage, the cluster under failure.
+- **Built:** `web/` (Vite + React + TypeScript, no UI/chart libraries): Feed (pick a user → cards with recall-source badges →
+  "Watched / Skip" posts an event → the next refresh highlights new items and lists dropped ones), a per-request latency
+  waterfall with one row per shard (which replica answered, failed attempts in red), a Cluster panel (shards × replicas,
+  feature nodes, workers, partition lag, DLQ, process table with kill / stop / freeze / slow buttons in demo mode), the A/B
+  page (Stage 7) and a Quality page with eval history and the Project Journey timeline. `make demo` starts everything.
+- **Verified:** 13 vitest tests (mocked fetch); screenshots from a live cluster in `docs/screenshots/` — including one taken
+  with both replicas of shard 0 slowed by 500 ms and a feature node frozen: the page still renders, the waterfall shows
+  `r0 timeout 44.7ms`, `r1 timeout 42.4ms`, and the response carries `ann_partial:missing_shards=[0]` and
+  `feature_store_unavailable` (the skipped video reappears because the real-time history is unreachable — degradation, visible).
+- 中文：网页 demo：点「划走」后下一屏变化、每阶段/每分片耗时瀑布图、集群面板可一键注入故障；截图在 docs/screenshots/。
 
 ## Key metrics · 关键指标
 

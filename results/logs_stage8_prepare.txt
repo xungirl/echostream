@@ -1,0 +1,14 @@
+  epoch 0 loss 7.8162 (16s)
+  epoch 1 loss 7.1426 (31s)
+  epoch 2 loss 6.9102 (46s)
+  epoch 3 loss 6.7565 (62s)
+saved /Users/xunxun/echostream/artifacts/two_tower/main_seed1
+  epoch 0 loss 7.2651 (15s)
+  epoch 1 loss 6.7651 (30s)
+  epoch 2 loss 6.6080 (45s)
+  epoch 3 loss 6.5138 (59s)
+saved /Users/xunxun/echostream/artifacts/two_tower/main_plain
+bundle /Users/xunxun/echostream/artifacts/serving/v2 105.57011 MB
+bundle /Users/xunxun/echostream/artifacts/serving/v3-slow 159.848217 MB
+bundle /Users/xunxun/echostream/artifacts/serving/v4-plain 105.570116 MB
+bundles ready

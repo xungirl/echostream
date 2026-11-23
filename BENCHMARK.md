@@ -160,3 +160,36 @@ What this shows on one laptop: sharding divides **memory per node** and **build 
 here — each extra shard adds ~0.5–0.8 ms of RPC/fan-out work in a single-threaded Python client, more than the per-shard
 search it saves. On this synthetic distribution IVF reaches recall@100 = 1.0 at ~2% of lists probed (100 queries vs exact
 brute force), which says nothing about real data — real-vector ANN recall is in Stage 2.
+
+---
+
+## Part 2
+
+### Stage 6 — MMR (`make stage6` → `results/stage6_mmr.json`, quality)
+Pool = ranker top-50, pick 10; similarity = mean(category Jaccard, caption cosine). 6,607 test users.
+
+| λ | NDCG@10 | Δ vs λ=1 [95% CI] | category diversity@10 | coverage@10 |
+|---|---|---|---|---|
+| 1.0 (off) | 0.1100 | – | 0.746 | 0.0355 |
+| 0.9 | 0.1108 | +0.0007 | 0.799 | 0.0366 |
+| 0.8 | 0.1109 | +0.0009 | 0.851 | 0.0382 |
+| **0.7 (selected)** | **0.1099** | −0.0001 (CI contains 0) | **0.896** | 0.0390 |
+| 0.5 | 0.1045 | −0.0055 | 0.958 | 0.0414 |
+| 0.3 | 0.0953 | −0.0148 | 0.991 | 0.0427 |
+
+### Stage 7 — pre-registered simulated A/B (`make stage7` → `results/stage7_ab.json`, quality/simulated)
+1,411 fully-observed users, 5 slates × 10, primary metric = positives per impression; bootstrap 2,000×.
+
+| variant | between-subjects arm (n) | within-subjects (all users) [95% CI] | slate-1 NDCG@10 (small matrix) | big-matrix test NDCG@10 |
+|---|---|---|---|---|
+| V1 popularity | 0.155 (296) | 0.158 [0.152, 0.164] | 0.156 | 0.0430 |
+| V2 ALS | 0.221 (289) | **0.214** [0.208, 0.220] | 0.387 | 0.0162 |
+| V3 two-tower | 0.207 (293) | **0.213** [0.206, 0.219] | 0.406 | 0.0803 |
+| V4 recall + rank | 0.186 (256) | 0.179 [0.172, 0.186] | 0.325 | 0.1100 |
+| V5 + MMR λ=0.7 | 0.182 (277) | 0.180 [0.173, 0.187] | 0.322 | 0.1099 |
+
+Pre-registered comparisons (between subjects, Holm): C1 V4−V3 −0.021 [−0.043, +0.001] p_holm 0.20; C2 V5−V4 −0.004
+[−0.027, +0.019]; C3 V3−V2 −0.013 [−0.033, +0.007]; C4 V2−V1 **+0.066 [0.047, 0.085]**, p_holm 7e-11 (only significant one).
+Within subjects: V4−V3 −0.034 [−0.037, −0.030]; V5−V4 +0.0013 [0.0004, 0.0021].
+Rank agreement with the online order: big-matrix NDCG@10 Kendall τ = −0.4 (7/10 pairs disagree); small-matrix slate-1
+NDCG@10 τ = +0.6.

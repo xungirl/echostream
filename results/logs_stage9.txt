@@ -1,0 +1,36 @@
+  epoch 0 loss 7.2651 (15s)
+  epoch 1 loss 6.7655 (29s)
+  epoch 2 loss 6.6083 (42s)
+  epoch 3 loss 6.5146 (54s)
+saved /Users/xunxun/echostream/artifacts/two_tower/main_nologq
+baseline {'mean': 0.11002, 'ci95': [0.10639, 0.11362]} {'mean': 0.23272, 'ci95': [0.22816, 0.23735]} 171s
+logq_removed {'mean': 0.10876, 'ci95': [0.10517, 0.11256]} {'mean': 0.17283, 'ci95': [0.16899, 0.17686]} 199s
+stale_item_features {'mean': 0.03864, 'ci95': [0.03668, 0.04087]} {'mean': 0.23272, 'ci95': [0.22816, 0.23735]} 229s
+dropped_two_tower_path {'mean': 0.11106, 'ci95': [0.1075, 0.11473]} {'mean': 0.21687, 'ci95': [0.21262, 0.22114]} 260s
+label_threshold_bug {'mean': 0.08618, 'ci95': [0.08295, 0.08926]} {'mean': 0.23272, 'ci95': [0.22816, 0.23735]} 293s
+stale_shard2_index {'mean': 0.10979, 'ci95': [0.10622, 0.1135]} {'mean': 0.23381, 'ci95': [0.22948, 0.23862]} 322s
+two_tower_seed1 {'mean': 0.11025, 'ci95': [0.10649, 0.11395]} {'mean': 0.23662, 'ci95': [0.23205, 0.24141]} 353s
+ranker_reseed {'mean': 0.10771, 'ci95': [0.10384, 0.11146]} {'mean': 0.23272, 'ci95': [0.22816, 0.23735]} 385s
+quota_tweak {'mean': 0.11001, 'ci95': [0.10632, 0.11361]} {'mean': 0.23448, 'ci95': [0.22997, 0.23918]} 415s
+logq_removed blocked retrieval_model_regression
+stale_item_features blocked stale_shard_index
+dropped_two_tower_path blocked unknown
+label_threshold_bug blocked ranker_regression
+stale_shard2_index passed None
+two_tower_seed1 passed None
+ranker_reseed blocked ranker_regression
+quota_tweak passed None
+{
+ "gate": {
+  "regressions": 5,
+  "harmless": 3,
+  "true_positives": 4,
+  "false_positives": 1,
+  "recall": 0.8,
+  "precision": 0.8
+ },
+ "agent": {
+  "diagnosed": 4,
+  "correct_root_cause": 2
+ }
+}

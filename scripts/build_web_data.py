@@ -62,9 +62,11 @@ def main():
         {"stage": 7, "title": "Simulated A/B (pre-registered)", "zh": "模拟线上 A/B", "done": bool(s7),
          "result": f"offline vs online Kendall tau {m(s7, 'offline_vs_online', 'big_matrix_test_ndcg10', 'kendall_tau')}"},
         {"stage": 8, "title": "Postgres + safe rollout", "zh": "影子 / 灰度 / 回滚", "done": bool(s8),
-         "result": "shadow → canary → promote / auto-rollback"},
+         "result": ("; ".join(f"{r['version']}: {r['decision']}" for r in s8["rollouts"]) if s8
+                    else "shadow → canary → promote / auto-rollback")},
         {"stage": 9, "title": "Release-guard agent", "zh": "发布守门 agent", "done": bool(s9),
-         "result": f"gate recall {m(s9, 'gate', 'recall')}, precision {m(s9, 'gate', 'precision')}"},
+         "result": (f"gate recall {m(s9, 'gate', 'recall')}, precision {m(s9, 'gate', 'precision')}"
+                    if s9 else "regression gate + tool-using agent")},
         {"stage": 10, "title": "Web demo", "zh": "网页 demo", "done": (ROOT / "web" / "src").exists(), "result": "this page"},
         {"stage": 11, "title": "E-commerce adapter", "zh": "电商领域适配器", "done": False, "result": "next: Amazon Reviews 2023"},
     ]
