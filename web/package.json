@@ -10,7 +10,7 @@
     "test": "vitest run",
     "dev:demo": "vite --config vite.demo.config.ts",
     "build:demo": "tsc --noEmit && vite build --config vite.demo.config.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "npm run build:demo && playwright test"
   },
   "dependencies": {
     "react": "18.3.1",

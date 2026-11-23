@@ -9,7 +9,7 @@ export ECHO_WORKER_IMPL ?= $(if $(HAVE_GO),go,python)
 
 .PHONY: setup data stage0 stage1 stage2 stage3 stage4 bundle train-all cluster-up cluster-down \
         test-unit test-integration test ci load chaos replay replay-paced synthetic demo clean-run \
-        go-build go-test parity bench-go
+        go-build go-test parity bench-go demo-model demo-browser demo-e2e bench-browser
 
 setup:            ## install Python deps (uv), web deps (npm) and build the Go worker (if Go is installed)
 	uv sync
@@ -95,6 +95,19 @@ stage8:           ## Postgres + shadow/canary/rollback demo + cache + rebuild
 	$(PY) scripts/stage8_rollout.py
 rebuild-features: ## rebuild the Redis feature store from the Postgres event archive
 	$(PY) -m echostream.store.rebuild
+
+# ---- Stage 13: serverless browser demo (the real models, re-implemented in TypeScript) ----
+demo-model:       ## export the browser bundle (int8) from artifacts/serving/current + regenerate the golden file
+	$(PY) scripts/export_browser_model.py
+	$(PY) scripts/gen_browser_golden.py
+demo-browser:     ## build the static demo -> web/dist-demo/ (copy that folder to any static host / sub-path)
+	cd web && npm run build:demo
+demo-e2e:         ## build + Playwright smoke test from /echostream/demo/ (SCREENSHOTS=1 rewrites docs/screenshots/demo_*.png)
+	cd web && npm run test:e2e
+bench-browser:    ## Stage 13 measurements in headless Chromium -> results/stage13_browser_demo.json
+	cd web && npm run build:demo && MEASURE=1 npx playwright test e2e/measure.spec.ts
+quant-sweep:      ## Stage 13: bundle size vs agreement with float32 (~5 min) -> results/stage13_quant_sweep.json
+	$(PY) scripts/stage13_quant_sweep.py
 
 web-data:
 	$(PY) scripts/build_web_data.py
