@@ -1,5 +1,6 @@
 """Turn a core function into a drill: create branch drill/<name>, replace the
 function body with `raise NotImplementedError` (docstring kept), so its tests go red.
+Go drills (go_*) replace the Go function body with `panic("drill: ...")` (doc comment kept).
 
     uv run python scripts/make_drill.py --list
     uv run python scripts/make_drill.py ndcg          # then: uv run pytest <tests shown>
@@ -31,6 +32,35 @@ DRILLS = {
     "gate":          ("echostream/core/gate.py", "check_metric", "tests/unit/test_gate.py", "medium"),
     "ann":           ("echostream/core/ann.py", "ann_search", "tests/unit/test_ann.py", "easy"),
 }
+
+# Go drills: (file, func or Type.method, test command, difficulty). The tests compare with values Python computed.
+GO_DRILLS = {
+    "go_hash_ring":  ("go/worker/internal/hashing/hashing.go", "Ring.GetNode",
+                      "cd go/worker && go test ./internal/hashing/", "medium"),
+    "go_float_repr": ("go/worker/internal/pycompat/pycompat.go", "FormatFloat",
+                      "cd go/worker && go test ./internal/pycompat/ -run FormatFloat", "medium"),
+}
+
+
+def stub_go(path: Path, qualname: str) -> None:
+    """Replace the body of a top-level Go func (or method Type.Name) with a panic."""
+    name = qualname.split(".")[-1]
+    recv = qualname.split(".")[0] if "." in qualname else None
+    lines = path.read_text().splitlines(keepends=True)
+    for i, line in enumerate(lines):
+        if not line.startswith("func "):
+            continue
+        head = line[5:]
+        if recv:
+            if not head.startswith("(") or f"*{recv})" not in head.split(")")[0] + ")" or f") {name}(" not in head:
+                continue
+        elif not head.startswith(f"{name}("):
+            continue
+        end = next(j for j in range(i + 1, len(lines)) if lines[j].rstrip("\n") == "}")
+        lines[i + 1:end] = [f'\tpanic("drill: implement {qualname}")\n']
+        path.write_text("".join(lines))
+        return
+    raise LookupError(f"func {qualname} not found in {path}")
 
 
 def find(tree: ast.Module, qualname: str) -> ast.FunctionDef:
@@ -66,16 +96,21 @@ def main() -> None:
     ap.add_argument("--no-branch", action="store_true", help="stub in place (used by tests)")
     args = ap.parse_args()
     if args.list or not args.drill:
-        for name, (f, fn, tests, diff) in DRILLS.items():
+        for name, (f, fn, tests, diff) in {**DRILLS, **GO_DRILLS}.items():
             print(f"{name:15s} {diff:7s} {f}::{fn}  tests: {tests}")
         return
-    if args.drill not in DRILLS:
+    if args.drill not in DRILLS and args.drill not in GO_DRILLS:
         sys.exit(f"unknown drill {args.drill}; --list shows all")
-    f, fn, tests, _ = DRILLS[args.drill]
+    f, fn, tests, _ = DRILLS.get(args.drill) or GO_DRILLS[args.drill]
     if not args.no_branch:
         if subprocess.run(["git", "diff", "--quiet"], cwd=ROOT).returncode != 0:
             sys.exit("working tree has uncommitted changes; commit or stash first")
         subprocess.run(["git", "checkout", "-b", f"drill/{args.drill}"], cwd=ROOT, check=True)
+    if args.drill in GO_DRILLS:
+        stub_go(ROOT / f, fn)
+        print(f"stubbed {f}::{fn}\nnow run:  {tests}   (should be red)")
+        print("when green again:  git checkout main  (the drill branch keeps your attempt)")
+        return
     stub(ROOT / f, fn)
     print(f"stubbed {f}::{fn}\nnow run:  OMP_NUM_THREADS=1 uv run pytest {tests} -q   (should be red)")
     print("when green again:  git checkout main  (the drill branch keeps your attempt)")
