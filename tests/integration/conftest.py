@@ -35,3 +35,21 @@ def full_cluster():
            "ECHO_DEMO_MODE": "1"}
     with cluster("full", env=env, run_dir=run_dir("full"), timeout=180) as cfg:
         yield cfg
+
+
+@pytest.fixture(scope="module")
+def pg_cluster():
+    env = {"ECHO_PORT_BASE": "29000", "ECHO_WORKERS": "2", "ECHO_PARTITIONS": "4", "ECHO_SHARDS": "2",
+           "ECHO_REPLICAS": "1", "ECHO_FEATURE_NODES": "2", "ECHO_API_REPLICAS": "2", "ECHO_PG": "1",
+           "ECHO_ARCHIVE": "1", "ECHO_LEASE_MS": "1500", "ECHO_CLAIM_IDLE_MS": "500",
+           "ECHO_BUNDLE": str(BUNDLE.resolve()), "ECHO_PG_DSN": "postgresql://echostream@127.0.0.1:29040/echostream"}
+    old = os.environ.get("ECHO_PG_DSN")
+    os.environ["ECHO_PG_DSN"] = env["ECHO_PG_DSN"]
+    try:
+        with cluster("full", env=env, run_dir=run_dir("pg"), timeout=180) as cfg:
+            yield cfg
+    finally:
+        if old is None:
+            os.environ.pop("ECHO_PG_DSN", None)
+        else:
+            os.environ["ECHO_PG_DSN"] = old

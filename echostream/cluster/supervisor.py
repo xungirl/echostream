@@ -31,6 +31,7 @@ from echostream.serving.config import CLUSTER, RUN_DIR, ClusterConfig
 
 PY = sys.executable
 REDIS = shutil.which("redis-server") or "/opt/homebrew/bin/redis-server"
+PG_BIN = Path(shutil.which("postgres") or "/opt/homebrew/bin/postgres").parent
 NGINX = shutil.which("nginx") or "/opt/homebrew/bin/nginx"
 
 
@@ -99,6 +100,11 @@ def build_specs(cfg: ClusterConfig, profile: str, run: Path, extra_env: dict[str
             "events": {"redis", "workers"},
             "serving": {"redis", "shards", "api", "lb"},
             "shards": {"shards"}}[profile]
+    if os.environ.get("ECHO_PG") == "1" and profile in ("full", "serving", "events"):
+        pg_dir = run / "pg"
+        specs.append(ProcSpec("postgres", [str(PG_BIN / "postgres"), "-D", str(pg_dir), "-p", str(cfg.postgres_port),
+                                           "-k", str(run), "-c", "listen_addresses=127.0.0.1",
+                                           "-c", "shared_buffers=128MB"], "db", port=cfg.postgres_port))
     if "redis" in want:
         ev_dir = run / "redis" / "events"
         ev_dir.mkdir(parents=True, exist_ok=True)
@@ -156,8 +162,11 @@ class Supervisor:
         p.events.append({"t": time.time(), "event": "start", "pid": p.popen.pid})
 
     def start_all(self) -> None:
+        if "postgres" in self.procs:   # the source of truth comes up (and gets its schema) first
+            bootstrap_postgres(self.run, self.cfg, lambda: self._start(self.procs["postgres"]))
         for p in self.procs.values():
-            self._start(p)
+            if p.popen is None:
+                self._start(p)
 
     async def monitor(self) -> None:
         while not self.stopping:
@@ -198,6 +207,31 @@ class Supervisor:
                     p.popen.wait(timeout=max(0.1, deadline - time.time()))
                 except subprocess.TimeoutExpired:
                     p.popen.kill()
+
+
+def bootstrap_postgres(run: Path, cfg: ClusterConfig, start) -> None:
+    pg_dir = run / "pg"
+    if not (pg_dir / "PG_VERSION").exists():
+        subprocess.run([str(PG_BIN / "initdb"), "-D", str(pg_dir), "-U", "echostream", "--auth=trust", "-E", "UTF8"],
+                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    start()
+    import psycopg
+    deadline = time.time() + 30
+    while True:
+        try:
+            with psycopg.connect(f"postgresql://echostream@127.0.0.1:{cfg.postgres_port}/postgres",
+                                 autocommit=True, connect_timeout=1) as c:
+                if not c.execute("SELECT 1 FROM pg_database WHERE datname = 'echostream'").fetchone():
+                    c.execute("CREATE DATABASE echostream")
+            break
+        except Exception:
+            if time.time() > deadline:
+                raise
+            time.sleep(0.2)
+    from echostream.store import db
+    os.environ.setdefault("ECHO_PG_DSN", f"postgresql://echostream@127.0.0.1:{cfg.postgres_port}/echostream")
+    with psycopg.connect(os.environ["ECHO_PG_DSN"], autocommit=True) as c:
+        db.init_schema(c)
 
 
 def control_app(sup: Supervisor) -> FastAPI:
