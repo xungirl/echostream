@@ -49,3 +49,9 @@ missing) and continue with "Next". Artifacts (models, indexes, per-user metric a
 ## Stage 6 — MMR (done)
 - `results/stage6_mmr.json`: λ=0.7 selected by the pre-written rule (NDCG@10 0.1099 vs 0.1100, Δ CI contains 0;
   category diversity@10 0.746 → 0.896; coverage@10 0.0355 → 0.0390). Serving: `ECHO_MMR_LAMBDA=0.7` or `?mmr_lambda=`.
+
+## Stage 7 — pre-registered simulated A/B (done)
+- PREREG.md committed (at the `mvp` commit) before `scripts/stage7_sim_ab.py` ran → `results/stage7_ab.json`. No deviations.
+- Between-subjects A/B (~280 users/arm): only C4 (ALS > popularity, +0.066) is significant after Holm. H1 (rank > two-tower)
+  NOT supported: −0.021 [−0.043, +0.001]; within-subjects the ranker is significantly worse (−0.034 [−0.037, −0.030]).
+- Offline (big-matrix NDCG@10) vs simulated-online ranking: Kendall τ = −0.4; small-matrix single-slate vs online τ = +0.6.
