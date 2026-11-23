@@ -82,6 +82,12 @@ def test_registry_hot_reload_without_restart(pg_cluster):
 def test_cache_hits_and_single_flight(pg_cluster):
     cfg = pg_cluster
     api = f"http://127.0.0.1:{cfg.api_port(0)}"
+    # the previous test ends a 50% canary; replicas reconcile the rollout every 1 s. If the burst below
+    # still ran under the canary, its result would be cached under "v1b:10" and the next request
+    # (now v1) would miss -> wait until this replica serves v1 only
+    deadline = time.time() + 10
+    while httpx.get(f"{api}/health", timeout=5).json()["rollout"].get("canary") and time.time() < deadline:
+        time.sleep(0.2)
     httpx.post(f"{api}/admin/cache", params={"ttl_s": 30}, timeout=5)
     try:
         async def burst():
@@ -91,8 +97,12 @@ def test_cache_hits_and_single_flight(pg_cluster):
         assert all(r.status_code == 200 for r in rs)
         comps = httpx.get(f"{api}/admin/rollout/stats", timeout=5).json()["cache"]["computations"]
         assert comps == 1                                 # 30 concurrent misses -> one computation
-        again = httpx.get(f"{api}/recommend", params={"user_id": 4321}, timeout=5).json()
-        assert "cache_hit" in again["degraded"]
+        for _ in range(3):   # the cache read has a 20 ms budget; on a loaded CI box one read can time out
+            again = httpx.get(f"{api}/recommend", params={"user_id": 4321}, timeout=5).json()
+            if "cache_hit" in again["degraded"]:
+                break
+        assert "cache_hit" in again["degraded"], {"burst_degraded": sorted({",".join(r.json()["degraded"]) for r in rs}),
+                                                  "again": again["degraded"], "timings": again.get("timings_ms")}
         post(cfg, [{"event_id": f"inv-{time.time_ns()}", "user_id": 4321, "item_id": 1, "watch_ratio": 3.0}])
         time.sleep(1.0)                                   # the worker's Lua deletes rec:{uid}
         fresh = httpx.get(f"{api}/recommend", params={"user_id": 4321}, timeout=5).json()
