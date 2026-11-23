@@ -1,6 +1,8 @@
 """Turn a core function into a drill: create branch drill/<name>, replace the
 function body with `raise NotImplementedError` (docstring kept), so its tests go red.
 Go drills (go_*) replace the Go function body with `panic("drill: ...")` (doc comment kept).
+TypeScript drills (ts_*, Stage 13 browser engine) replace the body with `throw new Error("drill: ...")`;
+their tests include the golden parity test against the Python read path.
 
     uv run python scripts/make_drill.py --list
     uv run python scripts/make_drill.py ndcg          # then: uv run pytest <tests shown>
@@ -40,6 +42,29 @@ GO_DRILLS = {
     "go_float_repr": ("go/worker/internal/pycompat/pycompat.go", "FormatFloat",
                       "cd go/worker && go test ./internal/pycompat/ -run FormatFloat", "medium"),
 }
+
+# TypeScript drills (Stage 13): the browser engine must still match the Python golden file.
+TS_DRILLS = {
+    "ts_tree":  ("web/src/demo/engine/gbdt.ts", "leafIndex",
+                 "cd web && npx vitest run src/demo/engine/gbdt.test.ts src/demo/engine/parity.test.ts", "easy"),
+    "ts_mmr":   ("web/src/demo/engine/mmr.ts", "mmrRerank",
+                 "cd web && npx vitest run src/demo/engine/mmr.test.ts src/demo/engine/parity.test.ts", "medium"),
+    "ts_merge": ("web/src/demo/engine/recall.ts", "mergeWithQuotas",
+                 "cd web && npx vitest run src/demo/engine/merge.test.ts src/demo/engine/parity.test.ts", "medium"),
+}
+
+
+def stub_ts(path: Path, name: str) -> None:
+    """Replace the body of a top-level `export function name(` with a throw (JSDoc kept)."""
+    lines = path.read_text().splitlines(keepends=True)
+    for i, line in enumerate(lines):
+        if line.startswith(f"export function {name}("):
+            start = next(j for j in range(i, len(lines)) if lines[j].rstrip().endswith("{"))
+            end = next(j for j in range(start + 1, len(lines)) if lines[j].rstrip("\n") == "}")
+            lines[start + 1:end] = [f'  throw new Error("drill: implement {name}");\n']
+            path.write_text("".join(lines))
+            return
+    raise LookupError(f"export function {name} not found in {path}")
 
 
 def stub_go(path: Path, qualname: str) -> None:
@@ -96,18 +121,23 @@ def main() -> None:
     ap.add_argument("--no-branch", action="store_true", help="stub in place (used by tests)")
     args = ap.parse_args()
     if args.list or not args.drill:
-        for name, (f, fn, tests, diff) in {**DRILLS, **GO_DRILLS}.items():
+        for name, (f, fn, tests, diff) in {**DRILLS, **GO_DRILLS, **TS_DRILLS}.items():
             print(f"{name:15s} {diff:7s} {f}::{fn}  tests: {tests}")
         return
-    if args.drill not in DRILLS and args.drill not in GO_DRILLS:
+    if args.drill not in {**DRILLS, **GO_DRILLS, **TS_DRILLS}:
         sys.exit(f"unknown drill {args.drill}; --list shows all")
-    f, fn, tests, _ = DRILLS.get(args.drill) or GO_DRILLS[args.drill]
+    f, fn, tests, _ = DRILLS.get(args.drill) or GO_DRILLS.get(args.drill) or TS_DRILLS[args.drill]
     if not args.no_branch:
         if subprocess.run(["git", "diff", "--quiet"], cwd=ROOT).returncode != 0:
             sys.exit("working tree has uncommitted changes; commit or stash first")
         subprocess.run(["git", "checkout", "-b", f"drill/{args.drill}"], cwd=ROOT, check=True)
     if args.drill in GO_DRILLS:
         stub_go(ROOT / f, fn)
+        print(f"stubbed {f}::{fn}\nnow run:  {tests}   (should be red)")
+        print("when green again:  git checkout main  (the drill branch keeps your attempt)")
+        return
+    if args.drill in TS_DRILLS:
+        stub_ts(ROOT / f, fn)
         print(f"stubbed {f}::{fn}\nnow run:  {tests}   (should be red)")
         print("when green again:  git checkout main  (the drill branch keeps your attempt)")
         return

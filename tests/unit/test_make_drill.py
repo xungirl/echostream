@@ -38,3 +38,16 @@ def test_every_go_drill_stubs_cleanly(name, tmp_path):
     if gofmt:                                                           # still valid Go syntax
         import subprocess
         assert subprocess.run([gofmt, "-e", str(target)], capture_output=True).returncode == 0
+
+
+@pytest.mark.parametrize("name", list(make_drill.TS_DRILLS))
+def test_every_ts_drill_stubs_cleanly(name, tmp_path):
+    f, fn, _, _ = make_drill.TS_DRILLS[name]
+    target = tmp_path / Path(f).name
+    shutil.copy(ROOT / f, target)
+    before = target.read_text()
+    make_drill.stub_ts(target, fn)
+    src = target.read_text()
+    assert f'throw new Error("drill: implement {fn}");' in src and src != before
+    assert src.count("export function ") == before.count("export function ")   # nothing else removed
+    assert src.count("{") == src.count("}")
