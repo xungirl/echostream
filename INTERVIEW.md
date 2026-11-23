@@ -249,9 +249,69 @@
   （慢的那几次 Redis 做同样的活多花约 50% CPU 时间，说明是核变慢了，不是 worker），所以多 worker 只报区间、倍数在同一轮里算。
   10k 条/秒下事件→特征延迟 p50 20–30 ms / p99 30–40 ms（Python 30–40 / 40–50 ms）。内存 25–35 MB vs 40–55 MB，差距不大——别夸大。
 
+### 20. 浏览器 demo（Stage 13）：`echostream/browser/` + `scripts/export_browser_model.py` + `web/src/demo/`
+
+一句话：把**同一个训练好的模型**导出成一个约 10 MB 的静态包，用 TypeScript 重写一遍读路径，放进浏览器里跑；HR 点一个链接就能「划」，
+每划一次下一屏在浏览器里重新算。读的顺序：导出器 → Python 进程内读路径（造黄金数据）→ TS 引擎 → 对拍测试 → 页面。
+
+**20.1 `echostream/browser/bundle_format.py` + `export.py`（导出器）**
+- **骨架**：读 `artifacts/serving/current`（集群正在服务的那个 bundle），写 `web/demo-public/model/`：
+  `model.bin.gz`（所有数组拼在一起，每个数组在 `manifest.json` 里记偏移、形状、编码）、`ranker.json`（LightGBM 树摊平成数组）、
+  `catalog.json`（10,728 个视频的中文标题 + 一级类目，类目英文名是手写表 `category_en.json`）、`users.json`（6 个真实用户 + 1 个新用户）、`LICENSE.md`（CC BY-SA 4.0）。
+  三个预设：`f32`（和服务 bundle 一模一样，约 33 MB）、`f16`、`int8`（发布的这个）。
+- **为什么**：
+  - **为什么不是 5 MB？** 目标是 ≤ 5 MB，实测做不到还不伤排序：光 10,728 × 512 的标题向量 int8 就 5.5 MB。试过 PCA 降维——点积误差比 int8 大 7–37 倍；
+    试过把 ItemCF 每个物品的邻居从 200 砍到 100——完全相同的屏幕从 52% 掉到 2%。所以选 int8（传输约 10 MB），把「和 float32 模型差多少」测出来写清楚
+    （`results/stage13_quant_sweep.json`，见 BENCHMARK Stage 13）。
+  - **为什么每个数组的解码都要「一次 float32 乘法」？** 浏览器和 Python 读同一个文件，必须解出**逐位相同**的数：int8 × 每行一个 float32 缩放，
+    两种语言里「两个 float32 相乘再舍入到 float32」都是 IEEE 精确舍入，所以结果一样；测试里对每个解码后的数组算 sha256，两边相同。
+  - **ItemCF 表为什么按 id 排序 + 差分 + varint？** 原表 [10728, 200] 按相似度排序、-1 补齐，174 万个有效邻居。按 id 排序后相邻 id 的差很小，一个字节就够；
+    而 ItemCF 打分是「对每个历史物品，把它的每个邻居加一次」，同一行里邻居的顺序不影响任何一个分数（有单测：重排前后 float32 分数逐位相同）。
+  - 输出是**确定性**的（没有时间戳，gzip 的 mtime=0），同样的 artifacts 导出同样的字节，所以 bundle 提交进仓库，构建 demo 不需要 1 GB 数据。
+- **语法**：`np.rint(x / scale[:, None]).astype(np.int8)` 每行量化；`gzip.compress(data, 9, mtime=0)` 去掉时间戳；
+  LightGBM 文本模型里 `decision_type=2` = 数值型、缺失值当 0、`default_left`，`left_child` 为负数时 `~child` 就是叶子编号。
+
+**20.2 `echostream/browser/local_read_path.py` + `scripts/gen_browser_golden.py`（Python 参考答案）**
+- **骨架**：不起集群，在**一个进程里**跑生产代码：4 个真的 shard server（FastAPI app）通过内存里的 ASGI transport 接到真的 `ShardClient`；
+  临时起一个 redis-server，真的 `Worker.process_once()` 把事件用真的 Lua 脚本写进特征库；真的 `Recommender` 出结果（预算放宽，保证不降级）。
+  50 个用户（43 个随机 + 6 个 demo 用户 + 新用户），每人 6 屏：第一屏，然后依次对当前屏的视频 like / skip / watch / like / skip。
+  记录每屏的用户向量、5 路召回列表和分数、合并后的 200、每个候选的排序概率、展示的 10 个、部分屏的 40 维特征 → `web/demo-golden/golden.json.gz`。
+- **为什么**：「浏览器和 Python 一样」只有在同一批输入下逐阶段对比才有说服力。中间结果靠**包装这个 bundle 实例的三个方法**记录（`engine.merge`、
+  `engine.user_vector`、`ranker.predict`），生产代码一行没改。Python 读的是**浏览器同一个 bundle 解出来的数**（`to_serving_bundle`），所以对比的只是「代码」。
+- **语法**：`httpx.ASGITransport(app=...)` 让 httpx 直接调 ASGI 应用不走网络；自定义 `AsyncBaseTransport` 按 host 分发到 4 个分片。
+
+**20.3 `web/src/demo/engine/`（TypeScript 读路径）**
+- **骨架**：`bundle.ts` 解码 → `recall.ts`（用户塔、精确双塔检索、ItemCF、两种热门、内容召回、配额合并）→ `features.ts`（40 维排序特征）
+  → `gbdt.ts`（210 棵树）→ `mmr.ts`（λ=0.7，前 50 里挑 10）→ `recommender.ts` 串起来；`featureStore.ts` 是浏览器里的「实时特征库」：
+  和 Lua 脚本同样的效果（event_id 去重、LPUSH 历史、截到 100 条、计数器；读最新 50 条、按时间正序）。每次点按钮 = 发一个事件 + 从头重算一屏。
+- **为什么能和 numpy 对上？**
+  - 浮点规则：Float32Array 每存一次就舍入到 float32；一次 + − × ÷ √ 先用 float64 算再舍入一次，结果正好等于 float32 运算（双精度位数 ≥ 2×24+2，二次舍入无害）。
+  - 只有长的点积对不上：numpy 用 BLAS 在 float32 里按它自己的顺序累加，我们用 float64 累加最后舍入一次——差约 1 个 ulp（实测用户向量最大差 8.9e-8，特征最大差 6e-7）。
+  - ItemCF 是 `np.add.at` 按历史顺序逐个 float32 乘加，可以**逐位复现**（实测 score_itemcf 误差 0）；权重 0.98^k 由 Python 算好放进 manifest，不依赖 JS 的 `Math.pow`。
+  - numpy 的小细节要照抄：`mean(axis=0)` 是按行顺序累加；`axis=1` 上 5 个数的 float32 求和是「第一个数 + 其余数从 0 开始的顺序和」（pairwise sum 的小数组分支）。
+- **语法**：`Math.fround`；`Float32Array.subarray` 不复制；`~next` 是按位取反（−1 → 0）；`(bits >>> c) & 1` 取类目位。
+
+**20.4 `parity.ts` + `parity.test.ts`（对拍）**
+- **骨架**：两种视角。**逐阶段**：每个阶段喂 Python 的输入（Python 的召回列表 → 我们的合并；Python 的候选 → 我们的特征和树；Python 的排序 → 我们的 MMR），
+  这样一个阶段的差异不会掩盖或引发另一个阶段的差异。**端到端**：只给用户记录和事件，我们的引擎自己跑完。
+- **实测**（`results/stage13_parity.json`，300 屏）：端到端展示的 10 个视频 **300/300 完全相同（顺序也相同）**；合并 300/300；MMR 300/300；
+  树对 LightGBM 的概率最大差 1.4e-17；特征 93.4% 逐位相同、最大差 6e-7；双塔召回列表 300/300 相同。
+  ItemCF 282、热门 162、内容 281 个列表逐位相同，其余**只差在并列的物品上**：numpy 的 `argpartition` 在第 200 名有并列时随便留一部分，
+  我们按 id 留；或者两个分数差一个 ulp 的物品顺序互换。测试把这种情况定义为「等价」（逐位置分数差 ≤ 1e-6、明显高于截断线的物品集合相同），并要求 300/300 等价。
+- **为什么不改 Python 让并列也按 id？** 那会改变线上和离线的已有结果（虽然只在第 200 名附近），不该为一个 demo 改生产代码；如实记录，留作下一步。
+
+**20.5 页面（`web/src/demo/DemoApp.tsx`、`session.ts`、`components/`）**
+- **骨架**：加载（进度条）→ 首次访问 3 步提示 → 选人（6 个真实用户按最喜欢的类目命名 + 新用户）→ 手机形状的 feed，每张卡片 Skip / Watched / Like
+  （watch_ratio 0.1 / 1.0 / 3.0；KuaiRec 没有点赞，模型的「喜欢」= 看了两遍以上）→ 右边漏斗「这屏是怎么来的」、回响（新进来的、被挤掉的）、兴趣画像。
+- **为什么**：给不看代码的人看：所有数字都是这一屏真实算出来的（每路召回多少、合并留了多少、排序、MMR）；兴趣画像就是用户塔读的那 50 个喜欢的视频的类目，
+  只有 Like 会改变它——Skip / Watched 进的是排序模型的实时特征，页面上也写明了。内容召回在这个模型版本里配额是 0（Stage 3 在验证集上选的），页面上如实显示「找到 200、留 0」。
+- **语法**：`useLayoutEffect` + `getBoundingClientRect` 做 FLIP 动画（卡片从旧位置滑到新位置）；`DecompressionStream("gzip")` 在浏览器里解压；
+  `role="radiogroup"` / `aria-live` 做无障碍；`prefers-reduced-motion` 关掉动画。
+
+
 ---
 
-## 第四部分：面试问答（约 38 题，答案都能在代码里指出来）
+## 第四部分：面试问答（约 46 题，答案都能在代码里指出来）
 
 ### 推荐算法
 
@@ -351,3 +411,31 @@
     验证：Python 生成 11,005 个用户 id（含 2^31、2^62 等边界）在 6 种节点数下的归属、7 种分区数的分区，写进 `go/worker/testdata/`，Go 测试要求 100% 相同；
     `tests/unit/test_go_golden.py` 保证 Python 改了以后黄金文件也必须重新生成。最后用对拍测试在真 Redis 上比对整个特征库，14,802 个 key 一个不差。
     踩过的坑：`blake2b.New(8, nil)` 才对，把 64 字节摘要截断成 8 字节是另一个结果。
+
+### 浏览器 demo（Stage 13）
+
+39. **为什么浏览器能和 Python 算得一模一样？** 三件事：(1) 读同一个文件、解出逐位相同的数组（每个解码都是一次 float32 乘法或查表，测试比 sha256）；
+    (2) float32 的单次运算在 JS 里用 float64 算再 `Math.fround` 一次，结果和 float32 运算完全一样；(3) 把 numpy 的累加顺序照抄（`np.add.at`、`mean`）。
+    唯一对不上的是 BLAS 的长点积（累加顺序不同，差 1 ulp），所以测试对分数用容差（1e-6），对 id 和顺序要求完全相同。结果：300 屏展示的视频 300/300 一样。
+40. **LightGBM 的树在 TS 里怎么算？** 从文本模型里取每棵树的 `split_feature / threshold / left_child / right_child / leaf_value`。
+    从根开始：特征是 NaN 就当 0（这个模型的 missing_type 是 None），`x <= threshold` 走左边，子节点编号为负就是叶子（`~child`）。
+    210 棵树的叶子值按树的顺序用 float64 相加（和 LightGBM 一样），最后 sigmoid。导出器遇到类别型分裂或别的 decision_type 会直接报错，不会悄悄算错。
+    对 Python 的 4,000 行特征，概率最大差 1.4e-17。
+41. **这个 demo 证明不了什么？** 分布式那一层完全不在页面里：没有分片、副本、scatter-gather、Redis Streams、Go worker、降级、延迟预算。
+    页面上的毫秒数是**浏览器里的计算时间**，不是服务端延迟（服务端延迟看 Stage 5 / 12）。另外发布的是 int8 量化的模型：和 float32 模型相比，
+    屏幕上的 10 个视频平均有 9.8 个相同，但完全同序的屏只有约一半——这是为了下载体积做的取舍，测出来写清楚了。
+42. **为什么不录一段回放 / 为什么不放一个云端后端？** 回放只能看我选好的路径，HR 自己点什么都不会变，「回响」就不成立；
+    云端后端要一直开着、要钱、会被刷、几个月后链接就挂了。浏览器里跑真模型：零运维、链接永远能用、每一次点击都是真的重算。代价是要重写一遍读路径，
+    所以必须有对拍测试证明两份代码一样。
+43. **量化怎么选的？** 做了一个扫描（`scripts/stage13_quant_sweep.py`）：每种存储方式都导出、读回、用真的 Python 读路径跑同样的 300 屏，和 float32 对比。
+    先确认 float32 的浏览器 bundle 和服务 bundle 逐屏一样（排序分数也逐位相同）。结论：标题向量的精度影响最大（int8 时完全同序的屏从 98% 掉到 65%），
+    ItemCF 不能截断邻居（截到 100 个只剩 2% 同屏）。选 int8：传输约 10 MB；f16 是 18 MB / 96% 同序，留了 `--quant f16` 开关。
+44. **为什么用 `argpartition` 会出现并列问题？这算 bug 吗？** `argpartition` 只保证第 k 个位置正确，同分的物品谁进前 k 是算法内部决定的，不是按 id。
+    代码后面用 `lexsort` 按 (分数, id) 排序，说明本意是「同分按 id」，但被截断的那一刻已经不是了。它不影响正确性，只影响第 200 名附近的并列物品，
+    而且对同一个输入是确定的。修它会改变已有的离线结果，所以这次只在对拍里把它测量出来、定义成「等价」，列为下一步。
+45. **实时特征在浏览器里怎么维护？** `featureStore.ts` 复刻 Lua 脚本的效果：event_id 去重（重复投递是空操作）、历史 LPUSH 并截到 100 条、计数器
+    （n、各 action、sum_wr、pos、每个类目的 pos / skip）。推荐时读最新 50 条、按时间正序——和 `FeatureStore.get(hist_n=50)` 一样。
+    注意这意味着第 51 次以前的反应不再被排除（和线上行为一致）。
+46. **新用户（冷启动）怎么处理？** 一个没有任何历史、所有画像字段都是「缺失」（编码 0）的用户：用户塔只有字段向量、没有历史平均，ItemCF 和内容召回为空，
+    靠双塔 + 两种热门凑够 200；排序特征里用户统计全 0，时长偏好用全目录中位数（和 `build_rank_assets` 对没有正样本的用户的处理一样）。
+    第一次 Like 之后，ItemCF 和内容召回马上有了输入，下一屏就变。

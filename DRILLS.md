@@ -46,6 +46,22 @@ cd go/worker && go test ./internal/hashing/          # 红 -> 写 -> 绿（11,00
 | G1 | `go_hash_ring` | `go/worker/internal/hashing/hashing.go::Ring.GetNode` | 在按 (hash, 节点名) 排好序的 `r.points` 上找第一个 hash **严格大于** `StableHash(key)` 的点，越界绕回 0；空环 panic | `go test ./internal/hashing/`（黄金数据 + 「加一个节点只搬约 1/4」） | 中 | `sort.Search(len(r.points), func(i int) bool { ... })`，结果 `% len(r.points)`；对应 Python 的 `bisect_right(ring, (h, "\uffff"))` |
 | G2 | `go_float_repr` | `go/worker/internal/pycompat/pycompat.go::FormatFloat` | 输出和 Python `repr(float)` 一字不差：nan/inf/-inf；最短往返数字；十进制指数在 [-4, 16) 用定点（整数补 `.0`），否则 `1.5e+16` / `1e-05`（指数至少两位） | `go test ./internal/pycompat/ -run FormatFloat`（~3,000 个随机浮点数） | 中 | 先 `strconv.FormatFloat(f, 'e', -1, 64)` 拿到「数字串 + 指数」，再按规则重新摆小数点 |
 
+### TypeScript 练习（Stage 13 浏览器引擎）
+
+同一个脚本，名字以 `ts_` 开头：函数体换成 `throw new Error("drill: ...")`（注释保留）。检查它的除了单测，还有**对拍测试**
+`parity.test.ts`：300 屏 Python 读路径的黄金数据（`web/demo-golden/golden.json.gz`），你写的版本必须让 300 屏展示的视频和 Python 一模一样。
+
+```bash
+uv run python scripts/make_drill.py ts_tree          # 建分支 drill/ts_tree 并挖空 leafIndex
+cd web && npx vitest run src/demo/engine/gbdt.test.ts src/demo/engine/parity.test.ts   # 红 -> 写 -> 绿
+```
+
+| # | 练习名 | 函数 | 必须做到什么 | 检查它的测试 | 难度 | 提示 |
+|---|---|---|---|---|---|---|
+| T1 | `ts_tree` | `web/src/demo/engine/gbdt.ts::leafIndex` | 从根节点走到叶子：特征是 NaN 当 0；`x <= threshold` 走左；子节点编号 < 0 表示叶子，返回 `~child`；只有一个叶子的树返回 0 | `gbdt.test.ts` + `parity.test.ts`（树对 LightGBM 概率误差 < 1e-12） | 易 | `for (;;)` 循环，`node = next` |
+| T2 | `ts_mmr` | `web/src/demo/engine/mmr.ts::mmrRerank` | 和 `core/mmr.py` 完全一样：先 min-max 归一化（全相等时都是 1）；每步选 λ·rel − (1−λ)·maxSim 最大的、并列取第一个；选完更新 maxSim | `mmr.test.ts` + `parity.test.ts`（300 屏 MMR 结果和 Python 一致） | 中 | 用严格的 `>` 才是「并列取第一个」（np.argmax 的行为） |
+| T3 | `ts_merge` | `web/src/demo/engine/recall.ts::mergeWithQuotas` | 和 `core/recall_merge.py` 一样：按优先级每路取配额、跳过重复（但记到 `allSources`）、轮流补满、最后把各路剩下的列表也扫一遍记来源 | `merge.test.ts` + `parity.test.ts`（合并 300/300 一致，含每个候选「被哪些路提出过」） | 中 | 最后那一步最容易漏：不记的话 `in_*` 特征不一样，排序分数就对不上 |
+
 ## 写完之后
 
 - 单测全绿后跑一次 `make ci`：集成测试（分片合并、事件管道等）会间接用到这些函数。

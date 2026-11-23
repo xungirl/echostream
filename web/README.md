@@ -49,3 +49,24 @@ src/
   components/            Waterfall, Journey (timeline), charts (CI plot, x-y chart, table)
   test/                  one test file per feature
 ```
+
+## Browser demo (Stage 13)
+
+A second, separate static site: the real trained models running in the browser, no backend.
+
+```bash
+npm run build:demo   # -> dist-demo/ (relative paths: copy it to any static host or sub-path)
+npm run dev:demo     # http://127.0.0.1:5174/
+npm run test:e2e     # build + Playwright smoke test served from /echostream/demo/
+MEASURE=1 npx playwright test e2e/measure.spec.ts   # size / time to interactive / compute -> ../results/
+```
+
+```
+demo/                    index.html + main.tsx (the Vite root of the demo)
+demo-public/model/       the browser bundle (exported by scripts/export_browser_model.py, committed)
+demo-golden/             golden file from the Python read path (scripts/gen_browser_golden.py)
+src/demo/engine/         TypeScript read path: bundle decoder, recall, merge, features, trees, MMR,
+                         real-time store; parity.test.ts compares it with the golden file
+src/demo/                page: DemoApp, session (one reaction = one event + one recompute), components
+e2e/                     serve.mjs (static server under /echostream/demo/), smoke + measure specs
+```

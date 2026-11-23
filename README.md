@@ -10,6 +10,11 @@
   基于实时行为反馈的分布式短视频推荐系统
 </p>
 
+<p align="center">
+  <b>▶ Try it in your browser: <a href="https://xungirl.com/echostream/demo/">xungirl.com/echostream/demo</a></b><br/>
+  the real trained models, running in your tab: react to videos and watch the next screen change · 在浏览器里直接体验
+</p>
+
 ---
 
 ## What is this? · 这是什么
@@ -31,6 +36,10 @@ It runs on **KuaiRec**, a real short-video interaction dataset released by Kuais
 | live feed after a skip | chaos: shard 0 slow on both replicas + feature node frozen |
 |---|---|
 | ![feed](docs/screenshots/feed_after_skip.png) | ![chaos](docs/screenshots/feed_degraded_chaos.png) |
+
+| browser demo (Stage 13): three reactions later, the real models running in the tab | the same page at 375 px, dark |
+|---|---|
+| ![browser demo](docs/screenshots/demo_1440_light.png) | ![browser demo, phone](docs/screenshots/demo_375_dark.png) |
 
 ## How a request flows · 一次请求怎么走
 
@@ -72,6 +81,7 @@ It runs on **KuaiRec**, a real short-video interaction dataset released by Kuais
 | Agent | A tool-using agent that investigates gate failures and writes incident reports | 门禁触发时自动排查原因、写事故报告的 agent |
 | Experiments | Simulated online A/B on the fully-observed matrix | 在全观测矩阵上做模拟线上 A/B |
 | Demo | Web feed with live per-stage latency waterfall | 网页推荐流 demo，实时显示每个阶段的耗时 |
+| Browser demo | The trained models exported to a static bundle and the read path re-implemented in TypeScript; public page, no backend; golden parity test vs Python | 模型导出成静态包、读路径用 TypeScript 重写，公开网页无后端；与 Python 逐屏对拍 |
 | Go worker | Drop-in Go rewrite of the stream consumer: same leases / XAUTOCLAIM / dedupe / DLQ, identical output (parity test), 2× end-to-end throughput, ~1/6 of the CPU | 用 Go 重写的事件消费者：租约、接管、去重、死信完全一致（对拍测试），端到端吞吐 2 倍、CPU 约 1/6 |
 
 ---
@@ -104,6 +114,7 @@ It runs on **KuaiRec**, a real short-video interaction dataset released by Kuais
 - [x] Stage 9 · Release-guard agent · 发布守门 agent
 - [x] Stage 10 · Web demo · 网页 demo
 - [x] Stage 12 · Event worker rewritten in Go, parity-tested, now the default · 用 Go 重写事件 worker（逐字节对齐，已设为默认）
+- [x] Stage 13 · Serverless browser demo: the read path in TypeScript, golden-tested against Python · 浏览器里跑真模型的公开 demo（与 Python 对拍）
 - [ ] Next · E-commerce domain adapter (Amazon Reviews 2023) · 电商领域适配器
 
 ---
@@ -323,6 +334,47 @@ Each stage: goal → decision & alternatives → built → verified → measured
   全量 1,253 万事件：端到端 8.5 万 vs 4.2 万条/秒（2 倍），worker CPU 约 1/6；单 worker 7.2 万 vs 1.8 万条/秒。
   Go 版不再受 CPU 限制，而是等 Redis 往返；下一个瓶颈是单线程的事件总线 Redis。顺便修了 Python 版两个会让 worker 反复崩溃的毒消息 bug。
 
+### Stage 13 — Serverless browser demo
+- **Goal:** a public link a non-technical reader can open and *click*: the real trained models react to their swipes, with
+  no backend to keep alive.
+- **Decision & alternatives:** export the serving bundle and re-implement the read path in TypeScript (user tower, exact
+  two-tower search, ItemCF, two popularity paths, caption-content path, quota merge, the 40 ranking features, LightGBM trees,
+  MMR, and the real-time store with the worker's Lua semantics); every reaction recomputes the next screen in the tab.
+  Rejected: a **recorded replay** (the viewer can only watch my clicks; nothing echoes theirs) and a **cloud backend**
+  (always-on cost, abuse, a link that dies when the bill stops; the cluster is a laptop design anyway). The price of the
+  choice is a second implementation, so it is only acceptable with a parity test against Python.
+- **Built:** `echostream/browser/` (bundle format with f32 / f16 / int8 codecs, exporter + 3 presets, in-process Python read
+  path: the real shard-server apps over ASGI, the real Worker + Lua on a temporary redis-server, the real Recommender),
+  `scripts/export_browser_model.py`, `scripts/gen_browser_golden.py`, `scripts/stage13_quant_sweep.py`,
+  `web/src/demo/engine/` (TypeScript read path), `web/src/demo/` (page), `web/e2e/` (Playwright). `make demo-browser`
+  builds `web/dist-demo/` with relative paths, so it can be copied under any sub-path.
+- **Verified:** golden parity on 50 users × 6 screens (43 sampled + the 6 demo users + a brand-new user; scripted like /
+  skip / watch through the Python worker): **the same 10 videos in the same order on 300 / 300 screens**; fed Python's
+  inputs, merge and MMR are identical 300 / 300 and the trees match LightGBM to 1.4e-17; features match to 6e-7 (93.4% of
+  values bit-identical; BLAS sums float32 dot products in another order); every decoded array has the same sha256 as the
+  Python reader's (`results/stage13_parity.json`). 40 vitest tests (13 from Stage 10), 3 Playwright tests (served from
+  `/echostream/demo/`: load, pick a viewer, 3 reactions, feed changes, no console errors, 375 px without horizontal
+  scroll, keyboard only), 4 pytest checks (codecs; the bundle and golden file are current).
+- **Measured** (`results/stage13_browser_demo.json`, 3 runs in `…_runs.jsonl`; headless Chromium 140 on the M2; browser
+  time, not server latency): bundle **10.0 MB** transferred (10.95 MB on disk); time to interactive **226–228 ms** from
+  localhost (median of 5 fresh loads, 3 runs) and **4.38 s** with simulated 20 Mbit/s + 40 ms latency; per-screen compute
+  **median 11.7–11.8 ms, p95 12.7 ms** over 840 recomputes per run (7 viewers × 120, each after one reaction).
+- **Problems → fixes:** (1) the target was ≤ 5 MB gzipped; float32 is 32.9 MB. Measured instead of guessed
+  (`results/stage13_quant_sweep.json`, real Python read path, identical events): caption vectors dominate (int8 alone drops
+  identical screens to 65%), PCA of the captions is 7–37× worse than int8 on dot products, and truncating ItemCF to 100
+  neighbours leaves 2% identical screens. Shipped int8 (10.0 MB): on average 9.78 of the 10 videos are the ones float32
+  shows, the same top video on 99.4% of screens, the exact same order on 52.3%; `--quant f16` gives 96.4% at 17.8 MB.
+  (2) Recall lists differed from Python only among tied scores: numpy's `argpartition` keeps an arbitrary subset of items
+  tied with the 200th score, the browser keeps the lowest ids → the test measures it ("equivalent": same items above the
+  cut, scores within 1e-6) instead of hiding it; Python left unchanged (it would move existing offline results). (3) In
+  one process, creating a LightGBM Booster after scipy was imported segfaults on macOS (libomp, like torch/faiss in
+  Stage 2) → `echostream/browser/__init__.py` imports lightgbm first. (4) Node ≥ 22 defines a global `localStorage` stub
+  that hides jsdom's → the UI test supplies an in-memory Storage; the page wraps every storage call in try/catch.
+- 中文：把正在服务的模型导出成约 10 MB 的静态包，读路径用 TypeScript 重写，HR 点链接就能在浏览器里「划」，每次反应都在本地重算下一屏，
+  不需要任何后端。和 Python 读路径（进程内跑真的分片服务、Worker+Lua、Recommender）对拍 300 屏：展示的 10 个视频 300/300 完全一致。
+  5 MB 目标做不到又不伤排序（float32 要 33 MB），实测后选 int8：和 float32 相比每屏 10 个视频平均 9.78 个相同、第一个相同 99.4%、完全同序 52%。
+  浏览器里首屏可交互 0.23 秒（本机）/ 4.4 秒（模拟 20 Mbit/s），每屏计算中位数 11.8 ms。
+
 ## Key metrics · 关键指标
 
 | metric | value | kind | how measured | source file |
@@ -355,6 +407,10 @@ Each stage: goal → decision & alternatives → built → verified → measured
 | event → feature latency at 10k events/s, Go / Python | p50 20–30 / 30–40 ms, p99 30–40 / 40–50 ms | real-replay | 40-bucket histogram, 3 repeats | `results/stage12_go_worker.json` |
 | Go worker, kill -9 mid-drain (×3) | 0 / 7,176 users mismatched | real-replay | XAUTOCLAIM takeover | `results/stage12_go_worker_runs.jsonl` |
 | Python vs Go parity | 14,802 keys, 28 DLQ entries, 14,198 archive rows identical | systems (correctness) | same events, fresh Redis/Postgres each | `results/stage12_go_parity.json` |
+| browser demo: TS engine vs Python read path, 300 screens | 300 / 300 identical screens (same 10 videos, same order); trees vs LightGBM 1.4e-17 | correctness | golden file, 50 users × 6 screens, scripted events | `results/stage13_parity.json` |
+| browser bundle (int8) | 10.0 MB transferred (float32: 32.9 MB; 5 MB target not met) | systems | gzip as served | `results/stage13_quant_sweep.json` |
+| int8 vs float32 bundle, same events | 9.78 / 10 videos shared, same #1 99.4%, same order 52.3% | quality | real Python read path, 306 screens | `results/stage13_quant_sweep.json` |
+| browser time to interactive / per-screen compute | 226–228 ms localhost, 4.38 s at 20 Mbit/s / median 11.8 ms, p95 12.7 ms | systems (browser time) | headless Chromium, 3 runs | `results/stage13_browser_demo.json` |
 
 ## Next steps · 下一步
 
@@ -438,6 +494,7 @@ loops before releasing leases on SIGTERM (Python releases first; final state is 
 | Process supervisor instead of docker compose | ms-level kill/freeze from tests; no VM network in latency numbers | not a production orchestrator; single machine |
 | One feature builder for offline training and online serving | removes a whole class of train/serve skew | features must be cheap enough for the request path |
 | Rewrite only the event worker in Go, same algorithm | hot, small, CPU-bound loop with a narrow contract; a 1:1 port isolates the language effect | two implementations to keep in sync → golden + parity tests in CI |
+| Public demo = the read path re-implemented in TypeScript, models shipped as a static bundle | a link that never dies, costs nothing, and reacts to the viewer's own clicks | a third implementation of the read path → golden parity test in CI; int8 bundle (10 MB) ≠ float32 exactly (measured) |
 
 ## How to run · 运行
 
@@ -455,6 +512,9 @@ make bench-go                      # Stage 12 benchmark matrix: Python vs Go (~3
 make stage6 stage7 stage8 release-guard
 make agent                   # release-guard agent, deterministic fake provider
 DASHSCOPE_API_KEY=... make agent-real   # real LLM (qwen3.8-flash), hard cap ¥2 via a token cost ledger
+make demo-browser            # Stage 13: static browser demo -> web/dist-demo/ (no data needed; bundle is committed)
+make demo-e2e bench-browser  # Playwright smoke test from /echostream/demo/ ; size / TTI / compute measurements
+make demo-model quant-sweep  # re-export the bundle + golden file from artifacts ; storage presets vs float32
 uv run python scripts/make_drill.py --list   # rewrite-the-core-function drills (DRILLS.md)
 ```
 
@@ -472,6 +532,9 @@ uv run python scripts/make_drill.py --list   # rewrite-the-core-function drills 
 - **Simulator ≠ users.** Stage 7/8 "online" metrics replay true small-matrix watch ratios; real users are stochastic and
   react to the feed itself.
 - **No video files** in KuaiRec, so the demo shows cards, not playback.
+- **Browser demo ≠ the serving system.** It runs the models, not the distributed layer (no shards, streams, workers,
+  degradation), its milliseconds are browser time, and it ships int8 weights: the same order as float32 on 52.3% of
+  screens (9.78 / 10 videos shared). Only this laptop's headless Chromium was measured, not a phone.
 - **Two worker implementations.** Kept identical by golden + parity tests, but every change to the event path now has to
   be made twice. Multi-worker drain throughput varied up to ~60 % between repeats on this laptop (Redis on slower cores),
   so those numbers are ranges; the end-to-end replay numbers are tight.
@@ -490,6 +553,14 @@ uv run python scripts/make_drill.py --list   # rewrite-the-core-function drills 
 
 ## Data & credits · 数据与致谢
 
-KuaiRec — Gao et al., *KuaiRec: A Fully-observed Dataset and Insights for Evaluating Recommender Systems*, CIKM 2022 ([arXiv 2202.10842](https://arxiv.org/abs/2202.10842)). Data © the KuaiRec authors, licensed [CC BY-SA 4.0](https://github.com/chongminggao/KuaiRec/blob/main/LICENSE). The dataset is downloaded by `make data` and is not redistributed in this repository.
+KuaiRec — Gao et al., *KuaiRec: A Fully-observed Dataset and Insights for Evaluating Recommender Systems*, CIKM 2022 ([arXiv 2202.10842](https://arxiv.org/abs/2202.10842)). Data © the KuaiRec authors, licensed [CC BY-SA 4.0](https://github.com/chongminggao/KuaiRec/blob/main/LICENSE). The raw dataset is downloaded by `make data` and is not redistributed in this repository.
 
-KuaiRec 数据集由快手和中国科学技术大学的作者发布，许可证 CC BY-SA 4.0。数据通过 `make data` 下载，不随本仓库分发。
+**One exception, derived data:** the browser demo's bundle in `web/demo-public/model/` (Stage 13) contains data derived from
+KuaiRec: the 10,728 video captions (truncated to 80 characters, unchanged Chinese text), category labels, per-video statistics,
+the interaction histories of 6 KuaiRec users identified only by their anonymous dataset ids, and models trained on the dataset
+(int8-quantized embeddings, the ItemCF table, the LightGBM trees). It is redistributed under the same license, CC BY-SA 4.0,
+with attribution in `web/demo-public/model/LICENSE.md` and in the page footer. The English category names are hand-written.
+
+KuaiRec 数据集由快手和中国科学技术大学的作者发布，许可证 CC BY-SA 4.0。原始数据通过 `make data` 下载，不随本仓库分发。
+例外：浏览器 demo 的模型包（`web/demo-public/model/`）包含由 KuaiRec 派生的数据（视频标题、类目、视频统计、6 个匿名用户的历史、训练出的模型），
+按同一许可证 CC BY-SA 4.0 分发，署名见该目录的 `LICENSE.md` 和页面底部。

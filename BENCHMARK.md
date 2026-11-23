@@ -322,3 +322,77 @@ NDCG@10 0.0018, recall@200 0.0035).
 | two-tower seed 1 | harmless | +0.0002 | +0.0039 | passed | – |
 | ranker reseed | harmless | −0.0023 | 0 | blocked (false alarm) | ranker_regression |
 | quota tweak | harmless | 0.0000 | +0.0018 | passed | – |
+
+---
+
+## Stage 13 — serverless browser demo (`web/src/demo/`, systems + correctness)
+
+**Machine:** the same Apple M2 (8 cores, 24 GB), macOS Darwin 27.2; Node v25.9.0; headless Chromium 140.0.7339.16 via
+Playwright 1.55.0; Python 3.12.14, numpy 2.2.6, LightGBM 4.7.0, faiss 1.16.0. **Date:** 2026-11-23. Load average ~2 during
+the browser runs (no echostream cluster running). All browser times are **computation in the page's main thread**, not
+server latency; nothing in this stage touches the cluster.
+
+### Parity: TypeScript engine vs the Python read path (`uv run python scripts/gen_browser_golden.py`, then `cd web && npx vitest run src/demo/engine/parity.test.ts`; numbers: `cd web && npx vite-node scripts/parity-report.ts` → `results/stage13_parity.json`)
+Python side: the shipped bundle decoded into the production `ServingBundle`, the real `Recommender` (MMR λ = 0.7), the real
+shard-server apps (4 shards, faiss Flat) over an in-memory ASGI transport, the real `Worker.process_once()` applying events
+with the Lua script on a temporary redis-server. 50 users (43 sampled with seed 13, the 6 demo users, the brand-new user) ×
+6 screens (first screen, then like / skip / watch / like / skip on the current screen) = 300 screens.
+
+| check | result |
+|---|---|
+| decoded arrays (all 42), sha256 of the float32 / int32 values | identical to the Python reader |
+| user vector | max abs diff 8.9e-8 |
+| two-tower / pop_platform lists (200 each) | 300 / 300 identical (ids and order) |
+| ItemCF / pop_recent / content lists | 282 / 162 / 281 identical; **300 / 300 equivalent** (differ only among tied items, see below) |
+| path scores | max abs diff 1.8e-7 (two-tower), 0 (ItemCF, popularity), 8.9e-8 (content) |
+| our merge of Python's 5 lists | 300 / 300 identical (ids, claiming path, every proposing path) |
+| our features on Python's candidates (4,000 rows × 40) | 93.4% bit-identical, max abs diff 6.0e-7 (`rt_max_sim`); 35 of 40 features always exact |
+| our trees on Python's features vs LightGBM's probabilities | max abs diff 1.4e-17 |
+| our MMR on Python's ranked list | 300 / 300 identical screens |
+| **end to end (our engine alone): the 10 shown videos** | **300 / 300 identical, same order** |
+| end to end: merged 200 identical | 246 / 300 (the rest differ only in which tied tail items the paths kept → `in_pop_recent` etc.) |
+
+"Equivalent": position by position the scores agree within 1e-6 and every item scoring more than 1e-6 above the 200th is
+in both lists. Two causes, both inspected: numpy's `argpartition` keeps an arbitrary subset of items tied with the 200th
+score (popularity scores have only 365 distinct values; quantized ItemCF sims and duplicate captions also tie) while the
+browser keeps the lowest ids; and two items whose float32 dot products differ by one rounding step swap places (BLAS
+sums in another order). Python was not changed.
+
+### Storage presets vs float32 (`make quant-sweep` = `uv run python scripts/stage13_quant_sweep.py` → `results/stage13_quant_sweep.json`, 4.6 min)
+Every config is exported, read back and run through the real Python read path on 50 sampled users + the brand-new user
+(6 screens each); the float32 run's events are replayed, so both see identical inputs. Check first: the float32 browser
+bundle reproduces the serving bundle itself on 300 / 300 screens with bit-identical ranker scores. Two full runs gave
+identical numbers. "transfer" = model.bin.gz as stored + the JSON files gzipped (what a host that gzips JSON sends).
+
+| config (item vectors / id emb / caption / ItemCF sims × neighbours) | transfer | identical screens | mean top-10 overlap | same #1 |
+|---|---|---|---|---|
+| f32 / f32 / f32 / f32 × 200 (= serving bundle) | 32.9 MB | reference | | |
+| f32 / f32 / **f16** / f32 × 200 | 22.7 MB | 98.0% (300/306) | 0.9997 | 100% |
+| f32 / f32 / **int8** / f32 × 200 | 16.9 MB | 65.4% | 0.9856 | 99.4% |
+| f16 / f16 / f16 / f16 × 200 (`--quant f16`) | 17.8 MB | 96.4% | 0.9993 | 100% |
+| **int8 / int8 / int8 / u8 table × 200 (`--quant int8`, shipped)** | **10.0 MB** | **52.3% (160/306)** | **0.9778** | **99.4%** |
+| f16 / f16 / int8 / u8 × 200 | 10.8 MB | 59.2% | 0.9830 | 99.4% |
+| f32 / f32 / int8 / u8 × 200 | 12.8 MB | 59.5% | 0.9833 | 99.4% |
+| f16 / f16 / int8 / u8 × **100** | 9.4 MB | 2.0% | 0.866 | 85.6% |
+| f16 / f16 / int8 / u8 × **50** | 8.5 MB | 0.7% | 0.826 | 85.3% |
+
+Caption PCA (measured separately on 200 random 10-video queries, rms error of the caption dot products): int8 at 512
+dimensions 4.4e-4; PCA to 256 / 128 / 64 dimensions 2.9e-3 / 9.8e-3 / 1.6e-2 (63–96% variance kept) — not tried in the
+pipeline. The 5 MB target is therefore **not met**; the shipped bundle is 10.0 MB as transferred (10.95 MB on disk,
+model.bin 11.3 MB before gzip). The bundle is committed so `make demo-browser` needs no data download.
+
+### Browser: time to interactive and per-screen compute (`make bench-browser` = `cd web && npm run build:demo && MEASURE=1 npx playwright test e2e/measure.spec.ts` → `results/stage13_browser_demo.json`, every run in `results/stage13_browser_demo_runs.jsonl`; 3 runs)
+The built site is served by `web/e2e/serve.mjs` under `/echostream/demo/` (JSON / JS gzip-encoded, model.bin.gz as is).
+
+| metric | run 1 | run 2 | run 3 |
+|---|---|---|---|
+| time to interactive, localhost, fresh cache, median of 5 loads | 226 ms | 228 ms | 228 ms |
+| … of which download / gunzip + decode (typical load) | 97 / 65 ms | | |
+| time to interactive, simulated 20 Mbit/s + 40 ms latency (Chromium throttling), median of 3 | 4.38 s | 4.38 s | 4.38 s |
+| per-screen compute, 7 viewers × 120 recomputes (each after one reaction): median / p95 | 11.8 / 12.7 ms | 11.7 / 12.7 ms | 11.8 / 12.7 ms |
+| … min / max | 9.6 / 20.4 ms | 9.6 / 20.2 ms | 9.6 / 21.2 ms |
+
+Time to interactive = navigation start → first screen rendered (model fetched, decompressed, decoded, first
+recommendation computed). Per viewer (run 3) the median ranges from 11.2 ms (Dance viewer, Anime viewer) to 12.4 ms
+(Pets · Comedy viewer); the brand-new viewer is 11.9 ms. On a real phone or a slower network both numbers will be higher;
+only this laptop was measured.
