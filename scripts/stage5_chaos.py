@@ -19,7 +19,7 @@ import numpy as np
 import redis
 
 from echostream.bench.loadgen import open_loop, per_second, summarize
-from echostream.cluster.client import cluster, control, wait_ready
+from echostream.cluster.client import cluster, fresh_run_dir, control, wait_ready
 from echostream.offline.evaluate import write_json
 
 SCENARIOS = {
@@ -122,7 +122,7 @@ def main():
     args = ap.parse_args()
     rows = []
     names = [n for n in SCENARIOS if not args.only or n in args.only.split(",")]
-    with cluster("full", env={"ECHO_PORT_BASE": "17000"}) as cfg:
+    with cluster("full", env={"ECHO_PORT_BASE": "17000"}, run_dir=fresh_run_dir("chaos")) as cfg:
         asyncio.run(open_loop(f"http://127.0.0.1:{cfg.lb_port}", 50, 5, np.arange(7176), seed=99))  # warm-up
         for name in names:
             for rep in range(args.repeats):

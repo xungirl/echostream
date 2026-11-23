@@ -1,0 +1,2019 @@
+{
+  "kind": "real-event replay (KuaiRec big_matrix, original time order)",
+  "machine": "macOS-27.2.1-arm64-arm-64bit",
+  "events": 12530806,
+  "target_rate": "max",
+  "batch": 1000,
+  "cluster": "4 API replicas + nginx, 8 partitions, 4 workers, 3 feature nodes",
+  "produce_seconds": 322.4,
+  "total_seconds_until_all_applied": 336.7,
+  "throughput_events_per_s_end_to_end": 37221.0,
+  "applied_rate_per_s_median": 36633.7,
+  "applied_rate_per_s_p10": 28359.3,
+  "applied": 12530806,
+  "duplicates_skipped": 0,
+  "dlq": 0,
+  "failed_batches": 0,
+  "e2e_latency_ms_bucket_upper_bounds": {
+    "p50": 30000,
+    "p95": 30000,
+    "p99": 60000
+  },
+  "max_backlog": 460688,
+  "users_checked": 7176,
+  "users_with_mismatched_counters": 0,
+  "feature_node_memory": {
+    "feat0": "300.34M",
+    "feat1": "443.37M",
+    "feat2": "444.32M"
+  },
+  "timeline": [
+    {
+      "t": 0.04,
+      "produced": 0,
+      "applied": 0,
+      "backlog": 0
+    },
+    {
+      "t": 1.06,
+      "produced": 62000,
+      "applied": 30911,
+      "backlog": 28270
+    },
+    {
+      "t": 2.1,
+      "produced": 150000,
+      "applied": 78411,
+      "backlog": 72285
+    },
+    {
+      "t": 3.12,
+      "produced": 261000,
+      "applied": 104911,
+      "backlog": 150776
+    },
+    {
+      "t": 4.14,
+      "produced": 362000,
+      "applied": 137911,
+      "backlog": 217982
+    },
+    {
+      "t": 5.15,
+      "produced": 477000,
+      "applied": 169911,
+      "backlog": 302089
+    },
+    {
+      "t": 6.17,
+      "produced": 578000,
+      "applied": 205911,
+      "backlog": 368134
+    },
+    {
+      "t": 7.23,
+      "produced": 677000,
+      "applied": 244411,
+      "backlog": 430868
+    },
+    {
+      "t": 8.24,
+      "produced": 688000,
+      "applied": 291911,
+      "backlog": 379589
+    },
+    {
+      "t": 9.26,
+      "produced": 781000,
+      "applied": 336911,
+      "backlog": 442276
+    },
+    {
+      "t": 10.27,
+      "produced": 793000,
+      "applied": 391911,
+      "backlog": 392589
+    },
+    {
+      "t": 11.3,
+      "produced": 885000,
+      "applied": 418911,
+      "backlog": 458807
+    },
+    {
+      "t": 12.31,
+      "produced": 897000,
+      "applied": 468411,
+      "backlog": 408589
+    },
+    {
+      "t": 13.32,
+      "produced": 897000,
+      "applied": 528411,
+      "backlog": 352089
+    },
+    {
+      "t": 14.33,
+      "produced": 992000,
+      "applied": 566911,
+      "backlog": 417589
+    },
+    {
+      "t": 15.34,
+      "produced": 1002000,
+      "applied": 617411,
+      "backlog": 368089
+    },
+    {
+      "t": 16.38,
+      "produced": 1090000,
+      "applied": 661911,
+      "backlog": 428717
+    },
+    {
+      "t": 17.39,
+      "produced": 1102000,
+      "applied": 715411,
+      "backlog": 378589
+    },
+    {
+      "t": 18.42,
+      "produced": 1192000,
+      "applied": 745911,
+      "backlog": 443094
+    },
+    {
+      "t": 19.43,
+      "produced": 1203000,
+      "applied": 783911,
+      "backlog": 395089
+    },
+    {
+      "t": 20.47,
+      "produced": 1289000,
+      "applied": 829911,
+      "backlog": 449428
+    },
+    {
+      "t": 21.48,
+      "produced": 1301000,
+      "applied": 877911,
+      "backlog": 406089
+    },
+    {
+      "t": 22.49,
+      "produced": 1301000,
+      "applied": 933411,
+      "backlog": 351589
+    },
+    {
+      "t": 23.49,
+      "produced": 1376000,
+      "applied": 977911,
+      "backlog": 401589
+    },
+    {
+      "t": 24.5,
+      "produced": 1388000,
+      "applied": 1029411,
+      "backlog": 352589
+    },
+    {
+      "t": 25.51,
+      "produced": 1484000,
+      "applied": 1062911,
+      "backlog": 418089
+    },
+    {
+      "t": 26.53,
+      "produced": 1496000,
+      "applied": 1092411,
+      "backlog": 379089
+    },
+    {
+      "t": 27.56,
+      "produced": 1564000,
+      "applied": 1138411,
+      "backlog": 418053
+    },
+    {
+      "t": 28.56,
+      "produced": 1576000,
+      "applied": 1185411,
+      "backlog": 374089
+    },
+    {
+      "t": 29.58,
+      "produced": 1648000,
+      "applied": 1228411,
+      "backlog": 419979
+    },
+    {
+      "t": 30.59,
+      "produced": 1660000,
+      "applied": 1276411,
+      "backlog": 377089
+    },
+    {
+      "t": 31.62,
+      "produced": 1747000,
+      "applied": 1305911,
+      "backlog": 431828
+    },
+    {
+      "t": 32.63,
+      "produced": 1759000,
+      "applied": 1353911,
+      "backlog": 391089
+    },
+    {
+      "t": 33.65,
+      "produced": 1846000,
+      "applied": 1392411,
+      "backlog": 450140
+    },
+    {
+      "t": 34.66,
+      "produced": 1858000,
+      "applied": 1439411,
+      "backlog": 404089
+    },
+    {
+      "t": 35.68,
+      "produced": 1858000,
+      "applied": 1495911,
+      "backlog": 347589
+    },
+    {
+      "t": 36.69,
+      "produced": 1939000,
+      "applied": 1534411,
+      "backlog": 403589
+    },
+    {
+      "t": 37.7,
+      "produced": 1951000,
+      "applied": 1584411,
+      "backlog": 356089
+    },
+    {
+      "t": 38.72,
+      "produced": 2035000,
+      "applied": 1620411,
+      "backlog": 413972
+    },
+    {
+      "t": 39.74,
+      "produced": 2047000,
+      "applied": 1656411,
+      "backlog": 367089
+    },
+    {
+      "t": 40.74,
+      "produced": 2132000,
+      "applied": 1700411,
+      "backlog": 426589
+    },
+    {
+      "t": 41.75,
+      "produced": 2144000,
+      "applied": 1746411,
+      "backlog": 380089
+    },
+    {
+      "t": 42.79,
+      "produced": 2231000,
+      "applied": 1788411,
+      "backlog": 440285
+    },
+    {
+      "t": 43.79,
+      "produced": 2242000,
+      "applied": 1831911,
+      "backlog": 394089
+    },
+    {
+      "t": 44.83,
+      "produced": 2325000,
+      "applied": 1869411,
+      "backlog": 450259
+    },
+    {
+      "t": 45.84,
+      "produced": 2337000,
+      "applied": 1917911,
+      "backlog": 403589
+    },
+    {
+      "t": 46.86,
+      "produced": 2337000,
+      "applied": 1972911,
+      "backlog": 353589
+    },
+    {
+      "t": 47.86,
+      "produced": 2427000,
+      "applied": 2009911,
+      "backlog": 419923
+    },
+    {
+      "t": 48.88,
+      "produced": 2439000,
+      "applied": 2053911,
+      "backlog": 374589
+    },
+    {
+      "t": 49.9,
+      "produced": 2530000,
+      "applied": 2089411,
+      "backlog": 436572
+    },
+    {
+      "t": 50.91,
+      "produced": 2542000,
+      "applied": 2136911,
+      "backlog": 394089
+    },
+    {
+      "t": 51.93,
+      "produced": 2635000,
+      "applied": 2169911,
+      "backlog": 460688
+    },
+    {
+      "t": 52.94,
+      "produced": 2647000,
+      "applied": 2215911,
+      "backlog": 417589
+    },
+    {
+      "t": 53.94,
+      "produced": 2647000,
+      "applied": 2271911,
+      "backlog": 363089
+    },
+    {
+      "t": 54.99,
+      "produced": 2733000,
+      "applied": 2306411,
+      "backlog": 421086
+    },
+    {
+      "t": 56.0,
+      "produced": 2744000,
+      "applied": 2354911,
+      "backlog": 375589
+    },
+    {
+      "t": 57.03,
+      "produced": 2822000,
+      "applied": 2392411,
+      "backlog": 427354
+    },
+    {
+      "t": 58.04,
+      "produced": 2834000,
+      "applied": 2441411,
+      "backlog": 378589
+    },
+    {
+      "t": 59.06,
+      "produced": 2919000,
+      "applied": 2478911,
+      "backlog": 437549
+    },
+    {
+      "t": 60.07,
+      "produced": 2931000,
+      "applied": 2526911,
+      "backlog": 391089
+    },
+    {
+      "t": 61.11,
+      "produced": 3013000,
+      "applied": 2562911,
+      "backlog": 441442
+    },
+    {
+      "t": 62.12,
+      "produced": 3024000,
+      "applied": 2614411,
+      "backlog": 398089
+    },
+    {
+      "t": 63.16,
+      "produced": 3112000,
+      "applied": 2649411,
+      "backlog": 456374
+    },
+    {
+      "t": 64.18,
+      "produced": 3121000,
+      "applied": 2690911,
+      "backlog": 411089
+    },
+    {
+      "t": 65.2,
+      "produced": 3121000,
+      "applied": 2746911,
+      "backlog": 361089
+    },
+    {
+      "t": 66.23,
+      "produced": 3206000,
+      "applied": 2785411,
+      "backlog": 417217
+    },
+    {
+      "t": 67.24,
+      "produced": 3215000,
+      "applied": 2823911,
+      "backlog": 371089
+    },
+    {
+      "t": 68.28,
+      "produced": 3305000,
+      "applied": 2867411,
+      "backlog": 433781
+    },
+    {
+      "t": 69.28,
+      "produced": 3316000,
+      "applied": 2916411,
+      "backlog": 388589
+    },
+    {
+      "t": 70.32,
+      "produced": 3400000,
+      "applied": 2950411,
+      "backlog": 447190
+    },
+    {
+      "t": 71.32,
+      "produced": 3411000,
+      "applied": 2996411,
+      "backlog": 404089
+    },
+    {
+      "t": 72.33,
+      "produced": 3411000,
+      "applied": 3052911,
+      "backlog": 350089
+    },
+    {
+      "t": 73.37,
+      "produced": 3495000,
+      "applied": 3084911,
+      "backlog": 405462
+    },
+    {
+      "t": 74.38,
+      "produced": 3506000,
+      "applied": 3125911,
+      "backlog": 360089
+    },
+    {
+      "t": 75.4,
+      "produced": 3582000,
+      "applied": 3171411,
+      "backlog": 409089
+    },
+    {
+      "t": 76.41,
+      "produced": 3593000,
+      "applied": 3218411,
+      "backlog": 365589
+    },
+    {
+      "t": 77.43,
+      "produced": 3667000,
+      "applied": 3249911,
+      "backlog": 415345
+    },
+    {
+      "t": 78.44,
+      "produced": 3679000,
+      "applied": 3293911,
+      "backlog": 370089
+    },
+    {
+      "t": 79.5,
+      "produced": 3765000,
+      "applied": 3329911,
+      "backlog": 431687
+    },
+    {
+      "t": 80.51,
+      "produced": 3776000,
+      "applied": 3373411,
+      "backlog": 387589
+    },
+    {
+      "t": 81.54,
+      "produced": 3855000,
+      "applied": 3410411,
+      "backlog": 443089
+    },
+    {
+      "t": 82.55,
+      "produced": 3867000,
+      "applied": 3457411,
+      "backlog": 398589
+    },
+    {
+      "t": 83.64,
+      "produced": 3943000,
+      "applied": 3495911,
+      "backlog": 447623
+    },
+    {
+      "t": 84.64,
+      "produced": 3954000,
+      "applied": 3539911,
+      "backlog": 404589
+    },
+    {
+      "t": 85.65,
+      "produced": 3954000,
+      "applied": 3581411,
+      "backlog": 352089
+    },
+    {
+      "t": 86.68,
+      "produced": 4039000,
+      "applied": 3623911,
+      "backlog": 408784
+    },
+    {
+      "t": 87.69,
+      "produced": 4049000,
+      "applied": 3663411,
+      "backlog": 366589
+    },
+    {
+      "t": 88.73,
+      "produced": 4131000,
+      "applied": 3705411,
+      "backlog": 422883
+    },
+    {
+      "t": 89.73,
+      "produced": 4142000,
+      "applied": 3753911,
+      "backlog": 379089
+    },
+    {
+      "t": 90.76,
+      "produced": 4224000,
+      "applied": 3787411,
+      "backlog": 435168
+    },
+    {
+      "t": 91.78,
+      "produced": 4235000,
+      "applied": 3829911,
+      "backlog": 389089
+    },
+    {
+      "t": 92.81,
+      "produced": 4312000,
+      "applied": 3867911,
+      "backlog": 442242
+    },
+    {
+      "t": 93.83,
+      "produced": 4324000,
+      "applied": 3914411,
+      "backlog": 397089
+    },
+    {
+      "t": 94.84,
+      "produced": 4410000,
+      "applied": 3948911,
+      "backlog": 457089
+    },
+    {
+      "t": 95.85,
+      "produced": 4421000,
+      "applied": 3995911,
+      "backlog": 412089
+    },
+    {
+      "t": 96.86,
+      "produced": 4421000,
+      "applied": 4044411,
+      "backlog": 360089
+    },
+    {
+      "t": 97.89,
+      "produced": 4498000,
+      "applied": 4087411,
+      "backlog": 410010
+    },
+    {
+      "t": 98.89,
+      "produced": 4510000,
+      "applied": 4135411,
+      "backlog": 364589
+    },
+    {
+      "t": 99.92,
+      "produced": 4590000,
+      "applied": 4167411,
+      "backlog": 417089
+    },
+    {
+      "t": 100.93,
+      "produced": 4602000,
+      "applied": 4215911,
+      "backlog": 372589
+    },
+    {
+      "t": 101.94,
+      "produced": 4677000,
+      "applied": 4251411,
+      "backlog": 423089
+    },
+    {
+      "t": 102.95,
+      "produced": 4689000,
+      "applied": 4299911,
+      "backlog": 375089
+    },
+    {
+      "t": 103.96,
+      "produced": 4775000,
+      "applied": 4336411,
+      "backlog": 432589
+    },
+    {
+      "t": 104.97,
+      "produced": 4787000,
+      "applied": 4377411,
+      "backlog": 393589
+    },
+    {
+      "t": 105.98,
+      "produced": 4865000,
+      "applied": 4418411,
+      "backlog": 445973
+    },
+    {
+      "t": 106.99,
+      "produced": 4877000,
+      "applied": 4466411,
+      "backlog": 400089
+    },
+    {
+      "t": 107.99,
+      "produced": 4877000,
+      "applied": 4514411,
+      "backlog": 349589
+    },
+    {
+      "t": 109.05,
+      "produced": 4970000,
+      "applied": 4550411,
+      "backlog": 410119
+    },
+    {
+      "t": 110.06,
+      "produced": 4979000,
+      "applied": 4596411,
+      "backlog": 370089
+    },
+    {
+      "t": 111.08,
+      "produced": 5068000,
+      "applied": 4636411,
+      "backlog": 428701
+    },
+    {
+      "t": 112.09,
+      "produced": 5078000,
+      "applied": 4672411,
+      "backlog": 388589
+    },
+    {
+      "t": 113.11,
+      "produced": 5164000,
+      "applied": 4713411,
+      "backlog": 447042
+    },
+    {
+      "t": 114.12,
+      "produced": 5176000,
+      "applied": 4756411,
+      "backlog": 405089
+    },
+    {
+      "t": 115.13,
+      "produced": 5176000,
+      "applied": 4808411,
+      "backlog": 355089
+    },
+    {
+      "t": 116.23,
+      "produced": 5257000,
+      "applied": 4847911,
+      "backlog": 403293
+    },
+    {
+      "t": 117.23,
+      "produced": 5268000,
+      "applied": 4895411,
+      "backlog": 360089
+    },
+    {
+      "t": 118.29,
+      "produced": 5355000,
+      "applied": 4937411,
+      "backlog": 415053
+    },
+    {
+      "t": 119.3,
+      "produced": 5365000,
+      "applied": 4978411,
+      "backlog": 372589
+    },
+    {
+      "t": 120.33,
+      "produced": 5458000,
+      "applied": 5012911,
+      "backlog": 442639
+    },
+    {
+      "t": 121.33,
+      "produced": 5469000,
+      "applied": 5054911,
+      "backlog": 398089
+    },
+    {
+      "t": 122.4,
+      "produced": 5548000,
+      "applied": 5096911,
+      "backlog": 448277
+    },
+    {
+      "t": 123.42,
+      "produced": 5560000,
+      "applied": 5135411,
+      "backlog": 406089
+    },
+    {
+      "t": 124.44,
+      "produced": 5560000,
+      "applied": 5188411,
+      "backlog": 356089
+    },
+    {
+      "t": 125.46,
+      "produced": 5644000,
+      "applied": 5229411,
+      "backlog": 416242
+    },
+    {
+      "t": 126.47,
+      "produced": 5656000,
+      "applied": 5276911,
+      "backlog": 372089
+    },
+    {
+      "t": 127.53,
+      "produced": 5744000,
+      "applied": 5310411,
+      "backlog": 428755
+    },
+    {
+      "t": 128.55,
+      "produced": 5756000,
+      "applied": 5351911,
+      "backlog": 390589
+    },
+    {
+      "t": 129.6,
+      "produced": 5840000,
+      "applied": 5386411,
+      "backlog": 445856
+    },
+    {
+      "t": 130.61,
+      "produced": 5849000,
+      "applied": 5433411,
+      "backlog": 401089
+    },
+    {
+      "t": 131.63,
+      "produced": 5849000,
+      "applied": 5487411,
+      "backlog": 350571
+    },
+    {
+      "t": 132.65,
+      "produced": 5931000,
+      "applied": 5522429,
+      "backlog": 407892
+    },
+    {
+      "t": 133.65,
+      "produced": 5943000,
+      "applied": 5568929,
+      "backlog": 365571
+    },
+    {
+      "t": 134.66,
+      "produced": 6024000,
+      "applied": 5595837,
+      "backlog": 420663
+    },
+    {
+      "t": 135.67,
+      "produced": 6036000,
+      "applied": 5639837,
+      "backlog": 375163
+    },
+    {
+      "t": 136.71,
+      "produced": 6119000,
+      "applied": 5682837,
+      "backlog": 431905
+    },
+    {
+      "t": 137.72,
+      "produced": 6127000,
+      "applied": 5731337,
+      "backlog": 386163
+    },
+    {
+      "t": 138.77,
+      "produced": 6212000,
+      "applied": 5766837,
+      "backlog": 443899
+    },
+    {
+      "t": 139.78,
+      "produced": 6222000,
+      "applied": 5808337,
+      "backlog": 400163
+    },
+    {
+      "t": 140.79,
+      "produced": 6222000,
+      "applied": 5856826,
+      "backlog": 348174
+    },
+    {
+      "t": 141.81,
+      "produced": 6303000,
+      "applied": 5896073,
+      "backlog": 405821
+    },
+    {
+      "t": 142.82,
+      "produced": 6315000,
+      "applied": 5934573,
+      "backlog": 361427
+    },
+    {
+      "t": 143.86,
+      "produced": 6393000,
+      "applied": 5975073,
+      "backlog": 414527
+    },
+    {
+      "t": 144.86,
+      "produced": 6404000,
+      "applied": 6021573,
+      "backlog": 370427
+    },
+    {
+      "t": 145.87,
+      "produced": 6479000,
+      "applied": 6056073,
+      "backlog": 423427
+    },
+    {
+      "t": 146.87,
+      "produced": 6491000,
+      "applied": 6088573,
+      "backlog": 381427
+    },
+    {
+      "t": 147.88,
+      "produced": 6565000,
+      "applied": 6130073,
+      "backlog": 435927
+    },
+    {
+      "t": 148.88,
+      "produced": 6577000,
+      "applied": 6173073,
+      "backlog": 390927
+    },
+    {
+      "t": 149.9,
+      "produced": 6646000,
+      "applied": 6209573,
+      "backlog": 437427
+    },
+    {
+      "t": 150.91,
+      "produced": 6658000,
+      "applied": 6249073,
+      "backlog": 395427
+    },
+    {
+      "t": 151.95,
+      "produced": 6741000,
+      "applied": 6287573,
+      "backlog": 452320
+    },
+    {
+      "t": 152.96,
+      "produced": 6750000,
+      "applied": 6325573,
+      "backlog": 410427
+    },
+    {
+      "t": 153.97,
+      "produced": 6750000,
+      "applied": 6378044,
+      "backlog": 361456
+    },
+    {
+      "t": 154.98,
+      "produced": 6823000,
+      "applied": 6410855,
+      "backlog": 413065
+    },
+    {
+      "t": 155.99,
+      "produced": 6835000,
+      "applied": 6448855,
+      "backlog": 371145
+    },
+    {
+      "t": 157.01,
+      "produced": 6912000,
+      "applied": 6481855,
+      "backlog": 425912
+    },
+    {
+      "t": 158.02,
+      "produced": 6924000,
+      "applied": 6523355,
+      "backlog": 382645
+    },
+    {
+      "t": 159.04,
+      "produced": 6995000,
+      "applied": 6563355,
+      "backlog": 434145
+    },
+    {
+      "t": 160.04,
+      "produced": 7007000,
+      "applied": 6605855,
+      "backlog": 393145
+    },
+    {
+      "t": 161.08,
+      "produced": 7081000,
+      "applied": 6637855,
+      "backlog": 442318
+    },
+    {
+      "t": 162.09,
+      "produced": 7093000,
+      "applied": 6681855,
+      "backlog": 404145
+    },
+    {
+      "t": 163.09,
+      "produced": 7093000,
+      "applied": 6717855,
+      "backlog": 358352
+    },
+    {
+      "t": 164.12,
+      "produced": 7168000,
+      "applied": 6757385,
+      "backlog": 410109
+    },
+    {
+      "t": 165.13,
+      "produced": 7179000,
+      "applied": 6793885,
+      "backlog": 367615
+    },
+    {
+      "t": 166.18,
+      "produced": 7252000,
+      "applied": 6832885,
+      "backlog": 419111
+    },
+    {
+      "t": 167.19,
+      "produced": 7264000,
+      "applied": 6869385,
+      "backlog": 378615
+    },
+    {
+      "t": 168.23,
+      "produced": 7336000,
+      "applied": 6908885,
+      "backlog": 426998
+    },
+    {
+      "t": 169.23,
+      "produced": 7347000,
+      "applied": 6941885,
+      "backlog": 391615
+    },
+    {
+      "t": 170.26,
+      "produced": 7424000,
+      "applied": 6977885,
+      "backlog": 445376
+    },
+    {
+      "t": 171.28,
+      "produced": 7434000,
+      "applied": 7013385,
+      "backlog": 406615
+    },
+    {
+      "t": 172.29,
+      "produced": 7434000,
+      "applied": 7061800,
+      "backlog": 360700
+    },
+    {
+      "t": 173.35,
+      "produced": 7511000,
+      "applied": 7094083,
+      "backlog": 414938
+    },
+    {
+      "t": 174.36,
+      "produced": 7523000,
+      "applied": 7137083,
+      "backlog": 376917
+    },
+    {
+      "t": 175.42,
+      "produced": 7602000,
+      "applied": 7165583,
+      "backlog": 429688
+    },
+    {
+      "t": 176.43,
+      "produced": 7611000,
+      "applied": 7204083,
+      "backlog": 392917
+    },
+    {
+      "t": 177.48,
+      "produced": 7682000,
+      "applied": 7242583,
+      "backlog": 437061
+    },
+    {
+      "t": 178.49,
+      "produced": 7691000,
+      "applied": 7278083,
+      "backlog": 399917
+    },
+    {
+      "t": 179.53,
+      "produced": 7768000,
+      "applied": 7310083,
+      "backlog": 454195
+    },
+    {
+      "t": 180.54,
+      "produced": 7780000,
+      "applied": 7349083,
+      "backlog": 420917
+    },
+    {
+      "t": 181.55,
+      "produced": 7780000,
+      "applied": 7397196,
+      "backlog": 375304
+    },
+    {
+      "t": 182.57,
+      "produced": 7849000,
+      "applied": 7423254,
+      "backlog": 424418
+    },
+    {
+      "t": 183.59,
+      "produced": 7861000,
+      "applied": 7463254,
+      "backlog": 386746
+    },
+    {
+      "t": 184.64,
+      "produced": 7931000,
+      "applied": 7496231,
+      "backlog": 434761
+    },
+    {
+      "t": 185.65,
+      "produced": 7943000,
+      "applied": 7536731,
+      "backlog": 397269
+    },
+    {
+      "t": 186.65,
+      "produced": 8004000,
+      "applied": 7561731,
+      "backlog": 438269
+    },
+    {
+      "t": 187.66,
+      "produced": 8016000,
+      "applied": 7600231,
+      "backlog": 399769
+    },
+    {
+      "t": 188.68,
+      "produced": 8088000,
+      "applied": 7636731,
+      "backlog": 452769
+    },
+    {
+      "t": 189.69,
+      "produced": 8100000,
+      "applied": 7673231,
+      "backlog": 415269
+    },
+    {
+      "t": 190.7,
+      "produced": 8100000,
+      "applied": 7720714,
+      "backlog": 371286
+    },
+    {
+      "t": 191.8,
+      "produced": 8183000,
+      "applied": 7750441,
+      "backlog": 426316
+    },
+    {
+      "t": 192.81,
+      "produced": 8193000,
+      "applied": 7785941,
+      "backlog": 395559
+    },
+    {
+      "t": 193.83,
+      "produced": 8260000,
+      "applied": 7817441,
+      "backlog": 442322
+    },
+    {
+      "t": 194.85,
+      "produced": 8272000,
+      "applied": 7851941,
+      "backlog": 405559
+    },
+    {
+      "t": 195.86,
+      "produced": 8272000,
+      "applied": 7899652,
+      "backlog": 360348
+    },
+    {
+      "t": 196.93,
+      "produced": 8338000,
+      "applied": 7933473,
+      "backlog": 405027
+    },
+    {
+      "t": 197.93,
+      "produced": 8349000,
+      "applied": 7968973,
+      "backlog": 372027
+    },
+    {
+      "t": 198.96,
+      "produced": 8424000,
+      "applied": 7994473,
+      "backlog": 423872
+    },
+    {
+      "t": 199.98,
+      "produced": 8435000,
+      "applied": 8026973,
+      "backlog": 389527
+    },
+    {
+      "t": 201.03,
+      "produced": 8501000,
+      "applied": 8064441,
+      "backlog": 431314
+    },
+    {
+      "t": 202.06,
+      "produced": 8511000,
+      "applied": 8104941,
+      "backlog": 396559
+    },
+    {
+      "t": 203.12,
+      "produced": 8577000,
+      "applied": 8138914,
+      "backlog": 438574
+    },
+    {
+      "t": 204.13,
+      "produced": 8587000,
+      "applied": 8174914,
+      "backlog": 402586
+    },
+    {
+      "t": 205.14,
+      "produced": 8587000,
+      "applied": 8216253,
+      "backlog": 360203
+    },
+    {
+      "t": 206.18,
+      "produced": 8660000,
+      "applied": 8242797,
+      "backlog": 411415
+    },
+    {
+      "t": 207.19,
+      "produced": 8672000,
+      "applied": 8281797,
+      "backlog": 377203
+    },
+    {
+      "t": 208.2,
+      "produced": 8736000,
+      "applied": 8316297,
+      "backlog": 422203
+    },
+    {
+      "t": 209.21,
+      "produced": 8748000,
+      "applied": 8350297,
+      "backlog": 387203
+    },
+    {
+      "t": 210.22,
+      "produced": 8810000,
+      "applied": 8378636,
+      "backlog": 429364
+    },
+    {
+      "t": 211.22,
+      "produced": 8822000,
+      "applied": 8410136,
+      "backlog": 394364
+    },
+    {
+      "t": 212.27,
+      "produced": 8889000,
+      "applied": 8448636,
+      "backlog": 435317
+    },
+    {
+      "t": 213.28,
+      "produced": 8901000,
+      "applied": 8489636,
+      "backlog": 404864
+    },
+    {
+      "t": 214.29,
+      "produced": 8901000,
+      "applied": 8529823,
+      "backlog": 362177
+    },
+    {
+      "t": 215.34,
+      "produced": 8967000,
+      "applied": 8559823,
+      "backlog": 403710
+    },
+    {
+      "t": 216.35,
+      "produced": 8978000,
+      "applied": 8588823,
+      "backlog": 370177
+    },
+    {
+      "t": 217.37,
+      "produced": 9040000,
+      "applied": 8626823,
+      "backlog": 413178
+    },
+    {
+      "t": 218.38,
+      "produced": 9052000,
+      "applied": 8665323,
+      "backlog": 376359
+    },
+    {
+      "t": 219.41,
+      "produced": 9120000,
+      "applied": 8700021,
+      "backlog": 423495
+    },
+    {
+      "t": 220.41,
+      "produced": 9132000,
+      "applied": 8725021,
+      "backlog": 391479
+    },
+    {
+      "t": 221.47,
+      "produced": 9201000,
+      "applied": 8757521,
+      "backlog": 436299
+    },
+    {
+      "t": 222.47,
+      "produced": 9210000,
+      "applied": 8795021,
+      "backlog": 401479
+    },
+    {
+      "t": 223.47,
+      "produced": 9210000,
+      "applied": 8839766,
+      "backlog": 360734
+    },
+    {
+      "t": 224.48,
+      "produced": 9271000,
+      "applied": 8863991,
+      "backlog": 404009
+    },
+    {
+      "t": 225.5,
+      "produced": 9283000,
+      "applied": 8898991,
+      "backlog": 370009
+    },
+    {
+      "t": 226.55,
+      "produced": 9352000,
+      "applied": 8930491,
+      "backlog": 416406
+    },
+    {
+      "t": 227.56,
+      "produced": 9364000,
+      "applied": 8967991,
+      "backlog": 383009
+    },
+    {
+      "t": 228.61,
+      "produced": 9431000,
+      "applied": 9003991,
+      "backlog": 428388
+    },
+    {
+      "t": 229.62,
+      "produced": 9441000,
+      "applied": 9033991,
+      "backlog": 394509
+    },
+    {
+      "t": 230.67,
+      "produced": 9505000,
+      "applied": 9069491,
+      "backlog": 435009
+    },
+    {
+      "t": 231.68,
+      "produced": 9516000,
+      "applied": 9099991,
+      "backlog": 400509
+    },
+    {
+      "t": 232.7,
+      "produced": 9516000,
+      "applied": 9146059,
+      "backlog": 357343
+    },
+    {
+      "t": 233.73,
+      "produced": 9575000,
+      "applied": 9181144,
+      "backlog": 397228
+    },
+    {
+      "t": 234.74,
+      "produced": 9652000,
+      "applied": 9204644,
+      "backlog": 448856
+    },
+    {
+      "t": 235.75,
+      "produced": 9664000,
+      "applied": 9235144,
+      "backlog": 414856
+    },
+    {
+      "t": 236.76,
+      "produced": 9664000,
+      "applied": 9276644,
+      "backlog": 371356
+    },
+    {
+      "t": 237.77,
+      "produced": 9729000,
+      "applied": 9315008,
+      "backlog": 415492
+    },
+    {
+      "t": 238.78,
+      "produced": 9741000,
+      "applied": 9349008,
+      "backlog": 381492
+    },
+    {
+      "t": 239.83,
+      "produced": 9810000,
+      "applied": 9377008,
+      "backlog": 426332
+    },
+    {
+      "t": 240.84,
+      "produced": 9819000,
+      "applied": 9408008,
+      "backlog": 392492
+    },
+    {
+      "t": 241.86,
+      "produced": 9882000,
+      "applied": 9448008,
+      "backlog": 433950
+    },
+    {
+      "t": 242.87,
+      "produced": 9894000,
+      "applied": 9485008,
+      "backlog": 400992
+    },
+    {
+      "t": 243.88,
+      "produced": 9894000,
+      "applied": 9529125,
+      "backlog": 358875
+    },
+    {
+      "t": 244.89,
+      "produced": 9959000,
+      "applied": 9553625,
+      "backlog": 405375
+    },
+    {
+      "t": 245.9,
+      "produced": 9971000,
+      "applied": 9587125,
+      "backlog": 370875
+    },
+    {
+      "t": 246.91,
+      "produced": 10041000,
+      "applied": 9619850,
+      "backlog": 420026
+    },
+    {
+      "t": 247.92,
+      "produced": 10053000,
+      "applied": 9657350,
+      "backlog": 386150
+    },
+    {
+      "t": 248.95,
+      "produced": 10118000,
+      "applied": 9686350,
+      "backlog": 432686
+    },
+    {
+      "t": 249.96,
+      "produced": 10130000,
+      "applied": 9719850,
+      "backlog": 397150
+    },
+    {
+      "t": 251.01,
+      "produced": 10200000,
+      "applied": 9748850,
+      "backlog": 440525
+    },
+    {
+      "t": 252.03,
+      "produced": 10211000,
+      "applied": 9784350,
+      "backlog": 412150
+    },
+    {
+      "t": 253.03,
+      "produced": 10211000,
+      "applied": 9831171,
+      "backlog": 368829
+    },
+    {
+      "t": 254.09,
+      "produced": 10276000,
+      "applied": 9864958,
+      "backlog": 414320
+    },
+    {
+      "t": 255.09,
+      "produced": 10288000,
+      "applied": 9896958,
+      "backlog": 378042
+    },
+    {
+      "t": 256.15,
+      "produced": 10349000,
+      "applied": 9932958,
+      "backlog": 416440
+    },
+    {
+      "t": 257.16,
+      "produced": 10360000,
+      "applied": 9966458,
+      "backlog": 382042
+    },
+    {
+      "t": 258.21,
+      "produced": 10427000,
+      "applied": 9997599,
+      "backlog": 427305
+    },
+    {
+      "t": 259.22,
+      "produced": 10438000,
+      "applied": 10030599,
+      "backlog": 393901
+    },
+    {
+      "t": 260.27,
+      "produced": 10504000,
+      "applied": 10062599,
+      "backlog": 438028
+    },
+    {
+      "t": 261.29,
+      "produced": 10515000,
+      "applied": 10097599,
+      "backlog": 403401
+    },
+    {
+      "t": 262.3,
+      "produced": 10515000,
+      "applied": 10143794,
+      "backlog": 362536
+    },
+    {
+      "t": 263.32,
+      "produced": 10585000,
+      "applied": 10173964,
+      "backlog": 412424
+    },
+    {
+      "t": 264.34,
+      "produced": 10597000,
+      "applied": 10206464,
+      "backlog": 382036
+    },
+    {
+      "t": 265.35,
+      "produced": 10661000,
+      "applied": 10230464,
+      "backlog": 426727
+    },
+    {
+      "t": 266.36,
+      "produced": 10669000,
+      "applied": 10265464,
+      "backlog": 390036
+    },
+    {
+      "t": 267.41,
+      "produced": 10739000,
+      "applied": 10299964,
+      "backlog": 438273
+    },
+    {
+      "t": 268.43,
+      "produced": 10751000,
+      "applied": 10340464,
+      "backlog": 405036
+    },
+    {
+      "t": 269.44,
+      "produced": 10751000,
+      "applied": 10372637,
+      "backlog": 366863
+    },
+    {
+      "t": 270.54,
+      "produced": 10819000,
+      "applied": 10403290,
+      "backlog": 408162
+    },
+    {
+      "t": 271.55,
+      "produced": 10828000,
+      "applied": 10436290,
+      "backlog": 374710
+    },
+    {
+      "t": 272.56,
+      "produced": 10882000,
+      "applied": 10471790,
+      "backlog": 411210
+    },
+    {
+      "t": 273.57,
+      "produced": 10894000,
+      "applied": 10509290,
+      "backlog": 376710
+    },
+    {
+      "t": 274.6,
+      "produced": 10959000,
+      "applied": 10540790,
+      "backlog": 424162
+    },
+    {
+      "t": 275.61,
+      "produced": 10971000,
+      "applied": 10570790,
+      "backlog": 388710
+    },
+    {
+      "t": 276.61,
+      "produced": 11037000,
+      "applied": 10598290,
+      "backlog": 432210
+    },
+    {
+      "t": 277.63,
+      "produced": 11049000,
+      "applied": 10634290,
+      "backlog": 402710
+    },
+    {
+      "t": 278.63,
+      "produced": 11049000,
+      "applied": 10680095,
+      "backlog": 360405
+    },
+    {
+      "t": 279.65,
+      "produced": 11114000,
+      "applied": 10709403,
+      "backlog": 405507
+    },
+    {
+      "t": 280.66,
+      "produced": 11126000,
+      "applied": 10740403,
+      "backlog": 374097
+    },
+    {
+      "t": 281.68,
+      "produced": 11179000,
+      "applied": 10770903,
+      "backlog": 406597
+    },
+    {
+      "t": 282.69,
+      "produced": 11191000,
+      "applied": 10799903,
+      "backlog": 373597
+    },
+    {
+      "t": 283.76,
+      "produced": 11259000,
+      "applied": 10836735,
+      "backlog": 416168
+    },
+    {
+      "t": 284.77,
+      "produced": 11265000,
+      "applied": 10876235,
+      "backlog": 378765
+    },
+    {
+      "t": 285.78,
+      "produced": 11333000,
+      "applied": 10905735,
+      "backlog": 428265
+    },
+    {
+      "t": 286.79,
+      "produced": 11345000,
+      "applied": 10933735,
+      "backlog": 394265
+    },
+    {
+      "t": 287.79,
+      "produced": 11415000,
+      "applied": 10969735,
+      "backlog": 446765
+    },
+    {
+      "t": 288.8,
+      "produced": 11427000,
+      "applied": 11000735,
+      "backlog": 412265
+    },
+    {
+      "t": 289.81,
+      "produced": 11427000,
+      "applied": 11048036,
+      "backlog": 368865
+    },
+    {
+      "t": 290.84,
+      "produced": 11492000,
+      "applied": 11072663,
+      "backlog": 412337
+    },
+    {
+      "t": 291.85,
+      "produced": 11502000,
+      "applied": 11107163,
+      "backlog": 378337
+    },
+    {
+      "t": 292.86,
+      "produced": 11567000,
+      "applied": 11139663,
+      "backlog": 424337
+    },
+    {
+      "t": 293.88,
+      "produced": 11579000,
+      "applied": 11179163,
+      "backlog": 386837
+    },
+    {
+      "t": 294.91,
+      "produced": 11643000,
+      "applied": 11210163,
+      "backlog": 431535
+    },
+    {
+      "t": 295.91,
+      "produced": 11655000,
+      "applied": 11243663,
+      "backlog": 398337
+    },
+    {
+      "t": 296.97,
+      "produced": 11710000,
+      "applied": 11278163,
+      "backlog": 432404
+    },
+    {
+      "t": 297.98,
+      "produced": 11722000,
+      "applied": 11306663,
+      "backlog": 400837
+    },
+    {
+      "t": 298.98,
+      "produced": 11722000,
+      "applied": 11351742,
+      "backlog": 357258
+    },
+    {
+      "t": 300.05,
+      "produced": 11788000,
+      "applied": 11387542,
+      "backlog": 401702
+    },
+    {
+      "t": 301.06,
+      "produced": 11799000,
+      "applied": 11417542,
+      "backlog": 366458
+    },
+    {
+      "t": 302.07,
+      "produced": 11867000,
+      "applied": 11450542,
+      "backlog": 414458
+    },
+    {
+      "t": 303.08,
+      "produced": 11879000,
+      "applied": 11481042,
+      "backlog": 383958
+    },
+    {
+      "t": 304.1,
+      "produced": 11940000,
+      "applied": 11518042,
+      "backlog": 423910
+    },
+    {
+      "t": 305.11,
+      "produced": 11952000,
+      "applied": 11552042,
+      "backlog": 390458
+    },
+    {
+      "t": 306.12,
+      "produced": 12015000,
+      "applied": 11581042,
+      "backlog": 438458
+    },
+    {
+      "t": 307.13,
+      "produced": 12027000,
+      "applied": 11607542,
+      "backlog": 402458
+    },
+    {
+      "t": 308.14,
+      "produced": 12027000,
+      "applied": 11645042,
+      "backlog": 372458
+    },
+    {
+      "t": 309.16,
+      "produced": 12086000,
+      "applied": 11673589,
+      "backlog": 414521
+    },
+    {
+      "t": 310.17,
+      "produced": 12098000,
+      "applied": 11704589,
+      "backlog": 382911
+    },
+    {
+      "t": 311.26,
+      "produced": 12147000,
+      "applied": 11726589,
+      "backlog": 415649
+    },
+    {
+      "t": 312.26,
+      "produced": 12157000,
+      "applied": 11756589,
+      "backlog": 387911
+    },
+    {
+      "t": 313.3,
+      "produced": 12222000,
+      "applied": 11785089,
+      "backlog": 432240
+    },
+    {
+      "t": 314.3,
+      "produced": 12234000,
+      "applied": 11818589,
+      "backlog": 406411
+    },
+    {
+      "t": 315.31,
+      "produced": 12234000,
+      "applied": 11861367,
+      "backlog": 365133
+    },
+    {
+      "t": 316.32,
+      "produced": 12295000,
+      "applied": 11883735,
+      "backlog": 407265
+    },
+    {
+      "t": 317.33,
+      "produced": 12307000,
+      "applied": 11920735,
+      "backlog": 375265
+    },
+    {
+      "t": 318.37,
+      "produced": 12377000,
+      "applied": 11950735,
+      "backlog": 425117
+    },
+    {
+      "t": 319.39,
+      "produced": 12389000,
+      "applied": 11989235,
+      "backlog": 389265
+    },
+    {
+      "t": 320.4,
+      "produced": 12452000,
+      "applied": 12021735,
+      "backlog": 432265
+    },
+    {
+      "t": 321.4,
+      "produced": 12464000,
+      "applied": 12055235,
+      "backlog": 399765
+    },
+    {
+      "t": 322.43,
+      "produced": 12527806,
+      "applied": 12081735,
+      "backlog": 438896
+    },
+    {
+      "t": 323.44,
+      "produced": 12530806,
+      "applied": 12119735,
+      "backlog": 399571
+    },
+    {
+      "t": 324.46,
+      "produced": 12530806,
+      "applied": 12157132,
+      "backlog": 357674
+    },
+    {
+      "t": 325.47,
+      "produced": 12530806,
+      "applied": 12200638,
+      "backlog": 318168
+    },
+    {
+      "t": 326.48,
+      "produced": 12530806,
+      "applied": 12242138,
+      "backlog": 277168
+    },
+    {
+      "t": 327.48,
+      "produced": 12530806,
+      "applied": 12288545,
+      "backlog": 236107
+    },
+    {
+      "t": 328.49,
+      "produced": 12530806,
+      "applied": 12320199,
+      "backlog": 198607
+    },
+    {
+      "t": 329.5,
+      "produced": 12530806,
+      "applied": 12358699,
+      "backlog": 163607
+    },
+    {
+      "t": 330.51,
+      "produced": 12530806,
+      "applied": 12394699,
+      "backlog": 128607
+    },
+    {
+      "t": 331.52,
+      "produced": 12530806,
+      "applied": 12431699,
+      "backlog": 93607
+    },
+    {
+      "t": 332.53,
+      "produced": 12530806,
+      "applied": 12457173,
+      "backlog": 69633
+    },
+    {
+      "t": 333.54,
+      "produced": 12530806,
+      "applied": 12475173,
+      "backlog": 51133
+    },
+    {
+      "t": 334.54,
+      "produced": 12530806,
+      "applied": 12493673,
+      "backlog": 32633
+    },
+    {
+      "t": 335.55,
+      "produced": 12530806,
+      "applied": 12512673,
+      "backlog": 14133
+    },
+    {
+      "t": 336.56,
+      "produced": 12530806,
+      "applied": 12530806,
+      "backlog": 0
+    }
+  ],
+  "date": "2026-11-22 21:44"
+}

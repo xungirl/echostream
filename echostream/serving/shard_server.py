@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import base64
 import json
 import os
 import threading
@@ -38,10 +39,22 @@ def shard_of(item_id: int, n_shards: int) -> int:
 
 
 class SearchRequest(BaseModel):
-    vector: list[float]
+    vector: list[float] | None = None
+    vector_b64: str | None = None    # float32 little-endian, base64 (compact; ~10x cheaper to parse than JSON floats)
     k: int = 100
     version: str | None = None
-    exclude: list[int] = []   # items the user has already seen: filtered here so top-k stays exact
+    exclude: list[int] = []          # items the user has already seen: filtered here so top-k stays exact
+    exclude_b64: str | None = None   # same as exclude, int32 little-endian base64
+
+    def query(self) -> np.ndarray:
+        if self.vector_b64 is not None:
+            return np.frombuffer(base64.b64decode(self.vector_b64), dtype="<f4")
+        return np.asarray(self.vector, dtype=np.float32)
+
+    def excluded(self) -> set[int]:
+        if self.exclude_b64:
+            return set(np.frombuffer(base64.b64decode(self.exclude_b64), dtype="<i4").tolist())
+        return set(self.exclude)
 
 
 class LoadRequest(BaseModel):
@@ -73,28 +86,58 @@ class ShardState:
     def load_synthetic(self, total: int, dim: int, kind: str, seed: int, **params) -> int:
         """Synthetic scale test: this shard's slice of `total` clustered random vectors.
         Generated in-process from a seed (nothing is written to disk)."""
-        per = total // self.n_shards + (1 if self.shard < total % self.n_shards else 0)
-        rng = np.random.default_rng(seed * 1000 + self.shard)
-        centers = np.random.default_rng(seed).standard_normal((256, dim)).astype(np.float32)
-        chunks = []
-        for start in range(0, per, 500_000):
-            n = min(500_000, per - start)
-            x = centers[rng.integers(0, 256, n)] + 0.6 * rng.standard_normal((n, dim)).astype(np.float32)
-            x /= np.linalg.norm(x, axis=1, keepdims=True)
-            chunks.append(x)
-        vecs = np.concatenate(chunks)
-        offset = sum(total // self.n_shards + (1 if s < total % self.n_shards else 0) for s in range(self.shard))
-        ids = np.arange(offset, offset + per, dtype=np.int64)
+        vecs, ids = synthetic_slice(total, self.n_shards, self.shard, dim, seed)
+        faiss.omp_set_num_threads(max(1, (os.cpu_count() or 8) // self.n_shards))   # build in parallel...
         index = build_index(vecs, kind, **params)
-        del vecs, chunks
+        faiss.omp_set_num_threads(1)                                              # ...serve single-threaded
+        del vecs
         with self.lock:
             self.indexes["synthetic"] = (index, ids)
             self.default_version = "synthetic"
-        return per
+        return len(ids)
+
+
+def synthetic_slice(total: int, n_shards: int, shard: int, dim: int, seed: int) -> tuple[np.ndarray, np.ndarray]:
+    """Deterministic slice `shard` of a synthetic corpus: 256 Gaussian clusters on the unit sphere."""
+    sizes = [total // n_shards + (1 if s < total % n_shards else 0) for s in range(n_shards)]
+    per, offset = sizes[shard], sum(sizes[:shard])
+    rng = np.random.default_rng(seed * 1000 + shard)
+    centers = np.random.default_rng(seed).standard_normal((256, dim)).astype(np.float32)
+    vecs = np.empty((per, dim), dtype=np.float32)
+    for start in range(0, per, 500_000):
+        n = min(500_000, per - start)
+        x = centers[rng.integers(0, 256, n)] + 0.6 * rng.standard_normal((n, dim)).astype(np.float32)
+        vecs[start:start + n] = x / np.linalg.norm(x, axis=1, keepdims=True)
+    return vecs, np.arange(offset, offset + per, dtype=np.int64)
+
+
+async def reconcile_versions(state: ShardState) -> None:
+    """Stage 8: load every model version the registry marks live/canary/shadow."""
+    from echostream.store import db
+    while True:
+        try:
+            with db.connect() as conn:
+                rows = conn.execute("SELECT version, bundle_path FROM model_registry "
+                                    "WHERE status IN ('live', 'canary', 'shadow')").fetchall()
+            for r in rows:
+                if r["version"] not in state.indexes:
+                    await asyncio.to_thread(state.load_version, r["version"], Path(r["bundle_path"]))
+        except Exception:
+            pass
+        await asyncio.sleep(1.0)
 
 
 def create_app(state: ShardState) -> FastAPI:
-    app = FastAPI(default_response_class=ORJSONResponse)
+    from contextlib import asynccontextmanager
+
+    @asynccontextmanager
+    async def lifespan(app):
+        task = asyncio.create_task(reconcile_versions(state)) if os.environ.get("ECHO_PG") == "1" else None
+        yield
+        if task:
+            task.cancel()
+
+    app = FastAPI(default_response_class=ORJSONResponse, lifespan=lifespan)
 
     @app.post("/search")
     async def search(req: SearchRequest, x_deadline_ms: float | None = Header(default=None)):
@@ -108,10 +151,9 @@ def create_app(state: ShardState) -> FastAPI:
             version = state.default_version
         index, ids = state.indexes[version]
         t = time.perf_counter()
-        exclude = set(req.exclude)
+        exclude = req.excluded()
         # over-fetch by the number of excluded items, then filter -> exact top-k of the allowed items
-        res_ids, res_scores = ann_search(index, np.asarray(req.vector, dtype=np.float32), req.k + len(exclude),
-                                         id_map=ids)
+        res_ids, res_scores = ann_search(index, req.query(), req.k + len(exclude), id_map=ids)
         keep = [j for j, i in enumerate(res_ids[0].tolist()) if i not in exclude][:req.k]
         took = time.perf_counter() - t
         SEARCH_SECONDS.observe(took)
@@ -177,7 +219,8 @@ def main() -> None:
         bundle = Path(args.bundle)
         manifest = json.loads((bundle / "manifest.json").read_text())
         state.load_version(manifest["version"], bundle)
-    uvicorn.run(create_app(state), host="127.0.0.1", port=args.port, log_level="warning", access_log=False)
+    uvicorn.run(create_app(state), host="127.0.0.1", port=args.port, log_level="warning", access_log=False,
+                loop="uvloop", http="httptools")
 
 
 if __name__ == "__main__":

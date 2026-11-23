@@ -22,7 +22,7 @@ import numpy as np
 import orjson
 import redis
 
-from echostream.cluster.client import cluster
+from echostream.cluster.client import cluster, fresh_run_dir
 from echostream.core.hashing import ConsistentHashRing
 from echostream.domain.kuairec import KuaiRecAdapter
 from echostream.offline.evaluate import write_json
@@ -113,7 +113,7 @@ def main():
     print(f"replaying {n:,} events, rate={args.rate or 'max'}", flush=True)
 
     env = {"ECHO_PORT_BASE": "17000", "ECHO_DEDUPE_TTL": "3600"}
-    with cluster("full", env=env) as cfg:
+    with cluster("full", env=env, run_dir=fresh_run_dir("replay")) as cfg:
         r = redis.Redis(port=cfg.events_redis_port)
         state = {"produced": 0, "backlog": 0, "failed_batches": 0}
         timeline = []

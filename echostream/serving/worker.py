@@ -61,6 +61,9 @@ class Worker:
         self.running = True
         self.stats = defaultdict(float)
         self.lat_hist = [0] * len(LAT_BUCKETS_MS)
+        # Stage 8: archive every applied event to Postgres (the source of truth) before acking
+        self.archive = os.environ.get("ECHO_ARCHIVE") == "1"
+        self.pg = None
 
     # ---------------------------------------------------------------- setup
     async def ensure_groups(self) -> None:
@@ -197,6 +200,8 @@ class Worker:
 
         results = await asyncio.gather(*(run_node(n, it) for n, it in by_node.items()), return_exceptions=True)
         now_ms = time.time() * 1000
+        archive_rows: list[tuple] = []
+        archive_ids: list = []
         for node, res in zip(by_node, results):
             if isinstance(res, BaseException):
                 blocked[p].add(node)       # transient: retry later, keep order
@@ -216,12 +221,36 @@ class Worker:
                 else:
                     DUPLICATES.inc()
                     self.stats["duplicates"] += 1
+                if self.archive and not isinstance(out, Exception):
+                    eid = entry_id.decode() if isinstance(entry_id, bytes) else entry_id
+                    archive_rows.append((ev["event_id"], ev["user_id"], ev["item_id"], ev["action"], ev["watch_ratio"],
+                                         ev["ts"], ev["cats"], p, eid))
+                    archive_ids.append(entry_id)
                 to_ack.append(entry_id)
+        if archive_rows and not await self.write_archive(archive_rows):
+            # Postgres unavailable: features are already applied (idempotent), but we keep the
+            # entries pending so the archive write is retried -> the archive never misses an event
+            failed = set(archive_ids)
+            to_ack = [e for e in to_ack if e not in failed]
+            blocked[p].update(self.fs.ring.nodes)   # keep order: nothing newer in this partition this round
         if to_ack:
             async with self.r.pipeline(transaction=False) as pipe:
                 pipe.xack(stream, EVENTS.group, *to_ack)
                 pipe.xdel(stream, *to_ack)   # keep the stream bounded: processed entries are gone
                 await pipe.execute()
+
+    async def write_archive(self, rows: list[tuple]) -> bool:
+        from echostream.store import db
+        try:
+            if self.pg is None or self.pg.closed:
+                self.pg = await db.aconnect()
+            await db.archive_events(self.pg, rows)
+            self.stats["archived"] += len(rows)
+            return True
+        except Exception:
+            self.stats["archive_failures"] += 1
+            self.pg = None
+            return False
 
     async def dead_letter(self, stream: str, entry_id, fields: dict, reason: str) -> None:
         clean = {(k.decode() if isinstance(k, bytes) else k): (v.decode() if isinstance(v, bytes) else v)
@@ -234,7 +263,13 @@ class Worker:
 
     # ---------------------------------------------------------------- main
     async def run(self) -> None:
-        await self.ensure_groups()
+        # Redis may still be loading its AOF (BusyLoadingError) or not listening yet: retry
+        for attempt in range(600):
+            try:
+                await self.ensure_groups()
+                break
+            except (RedisConnectionError, RedisTimeoutError, ResponseError, OSError):
+                await asyncio.sleep(0.2)
         await asyncio.gather(self.lease_loop(), self.process_loop())
 
     async def shutdown(self) -> None:
@@ -259,7 +294,12 @@ def main() -> None:
         loop.add_signal_handler(signal.SIGTERM, stop.set)
         loop.add_signal_handler(signal.SIGINT, stop.set)
         task = asyncio.create_task(w.run())
+        # exit if the worker task dies, so the supervisor restarts the process instead of
+        # leaving a silent zombie that holds no leases and processes nothing
+        task.add_done_callback(lambda t: stop.set())
         await stop.wait()
+        if task.done() and not task.cancelled() and task.exception():
+            raise SystemExit(f"worker crashed: {task.exception()!r}")
         await w.shutdown()   # graceful: release leases so others take over immediately
         task.cancel()
 

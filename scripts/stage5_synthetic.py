@@ -49,6 +49,32 @@ async def measure(cfg, qs, k=100):
             "partial": partial}
 
 
+async def ann_recall(cfg, qs, total, n_shards, k=100):
+    """Recall@100 of the sharded IVF answer vs exact brute force on the same synthetic corpus
+    (regenerated deterministically here, shard by shard)."""
+    from echostream.serving.shard_server import synthetic_slice
+    best_s = np.full((len(qs), k), -np.inf, dtype=np.float32)
+    best_i = np.zeros((len(qs), k), dtype=np.int64)
+    for s in range(n_shards):
+        all_vecs, all_ids = synthetic_slice(total, n_shards, s, DIM, seed=7)
+        for c in range(0, len(all_ids), 1_000_000):          # chunked: 100 x 1M scores at a time
+            vecs, ids = all_vecs[c:c + 1_000_000], all_ids[c:c + 1_000_000]
+            sc = qs @ vecs.T
+            top = np.argpartition(-sc, k - 1, axis=1)[:, :k]
+            cand_s = np.concatenate([best_s, np.take_along_axis(sc, top, 1)], 1)
+            cand_i = np.concatenate([best_i, ids[top]], 1)
+            o = np.argsort(-cand_s, 1)[:, :k]
+            best_s, best_i = np.take_along_axis(cand_s, o, 1), np.take_along_axis(cand_i, o, 1)
+        del all_vecs
+    client = ShardClient(cfg.shard_urls(), Timeouts(total_ms=5000, shard_ms=5000))
+    hits = 0
+    for q, exact in zip(qs, best_i):
+        merged, _ = await client.search(q, k, time.monotonic() + 5)
+        hits += len(set(merged.ids) & set(exact.tolist()))
+    await client.close()
+    return round(hits / (len(qs) * k), 4)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--totals", default="1000000,10000000")
@@ -64,7 +90,8 @@ def main():
             if total <= 1_000_000:
                 kind, params = "flat", {}
             else:
-                kind, params = "ivf", {"nlist": int(4 * math.sqrt(per))}
+                kind, params = "ivf", {"nlist": int(math.sqrt(per))}
+            nprobe = max(8, params.get("nlist", 0) // 50)
             env = {"ECHO_PORT_BASE": "19000", "ECHO_SHARDS": str(n_shards), "ECHO_REPLICAS": "1"}
             t0 = time.time()
             with cluster("shards", env=env, timeout=1800,
@@ -75,12 +102,13 @@ def main():
                     import httpx
                     for s in range(n_shards):
                         httpx.post(f"http://127.0.0.1:{cfg.shard_port(s, 0)}/admin/search_params",
-                                   params={"nprobe": 16}, timeout=5)
+                                   params={"nprobe": nprobe}, timeout=5)
                 st = status(cfg)
                 rss = [psutil.Process(v["pid"]).memory_info().rss / 2**20 for v in st.values() if v["group"] == "shards"]
                 reps = [asyncio.run(measure(cfg, qs)) for _ in range(args.repeats)]
+                recall = asyncio.run(ann_recall(cfg, qs[:100], total, n_shards)) if kind == "ivf" else 1.0
             row = {"total_vectors": total, "n_shards": n_shards, "vectors_per_shard": per, "index": kind,
-                   **params, **({"nprobe": 16} if kind == "ivf" else {}),
+                   **params, **({"nprobe": nprobe} if kind == "ivf" else {}), "recall@100_vs_exact_100q": recall,
                    "startup_build_s": round(ready_s, 1),
                    "rss_mb_per_shard_max": round(max(rss), 1), "rss_mb_total": round(sum(rss), 1),
                    "p50_ms_mean": round(float(np.mean([r["p50_ms"] for r in reps])), 3),

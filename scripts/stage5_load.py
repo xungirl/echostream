@@ -16,7 +16,7 @@ import time
 import numpy as np
 
 from echostream.bench.loadgen import open_loop, summarize
-from echostream.cluster.client import cluster
+from echostream.cluster.client import cluster, fresh_run_dir
 from echostream.offline.evaluate import write_json
 
 
@@ -30,7 +30,7 @@ def main():
     levels = [float(x) for x in args.levels.split(",")]
     users = np.arange(7176)
     rows = []
-    with cluster("full", env={"ECHO_PORT_BASE": "17000"}) as cfg:
+    with cluster("full", env={"ECHO_PORT_BASE": "17000"}, run_dir=fresh_run_dir("load")) as cfg:
         base = f"http://127.0.0.1:{cfg.lb_port}"
         asyncio.run(open_loop(base, 50, 5, users, seed=999))   # warm-up (not recorded)
         for rps in levels:

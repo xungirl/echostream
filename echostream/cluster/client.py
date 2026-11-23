@@ -15,6 +15,15 @@ import redis
 from echostream.serving.config import ClusterConfig
 
 
+def fresh_run_dir(name: str) -> Path:
+    """An empty .run/<name> directory (Redis AOF, Postgres data, logs) for a clean benchmark run."""
+    import shutil
+    d = Path(__file__).resolve().parents[2] / ".run" / name
+    shutil.rmtree(d, ignore_errors=True)
+    d.mkdir(parents=True)
+    return d
+
+
 def wait_ready(cfg: ClusterConfig, profile: str, timeout: float = 90.0) -> None:
     deadline = time.time() + timeout
     checks = []
