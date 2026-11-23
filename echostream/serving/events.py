@@ -28,10 +28,26 @@ class PoisonEvent(ValueError):
     pass
 
 
+NOT_UTF8 = "fields are not valid UTF-8"
+
+
+def as_text(x):
+    """bytes -> str if it is valid UTF-8, else keep the raw bytes (used for the DLQ copy)."""
+    if isinstance(x, bytes):
+        try:
+            return x.decode()
+        except UnicodeDecodeError:
+            return x
+    return x
+
+
 def parse_fields(fields: dict) -> dict:
     """Validate a raw stream entry. Raises PoisonEvent for anything malformed."""
-    f = {(k.decode() if isinstance(k, bytes) else k): (v.decode() if isinstance(v, bytes) else v)
-         for k, v in fields.items()}
+    try:
+        f = {(k.decode() if isinstance(k, bytes) else k): (v.decode() if isinstance(v, bytes) else v)
+             for k, v in fields.items()}
+    except UnicodeDecodeError as e:   # not PoisonEvent -> would crash the worker on every redelivery
+        raise PoisonEvent(NOT_UTF8) from e
     missing = [k for k in REQUIRED if k not in f]
     if missing:
         raise PoisonEvent(f"missing fields {missing}")
