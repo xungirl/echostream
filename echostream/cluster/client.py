@@ -58,6 +58,19 @@ def wait_ready(cfg: ClusterConfig, profile: str, timeout: float = 90.0) -> None:
         pending = still
         if pending:
             time.sleep(0.25)
+    if profile in ("full", "serving"):
+        # nginx marks an upstream down for fail_timeout (2 s) after a refused connection during
+        # start-up; wait until the LB has answered cleanly for ~2.5 s in a row
+        ok_streak = 0
+        while ok_streak < 10:
+            if time.time() > deadline:
+                raise TimeoutError("load balancer not stable")
+            try:
+                r = httpx.get(f"http://127.0.0.1:{cfg.lb_port}/recommend", params={"user_id": 0, "n": 1}, timeout=2)
+                ok_streak = ok_streak + 1 if r.status_code == 200 else 0
+            except httpx.HTTPError:
+                ok_streak = 0
+            time.sleep(0.25)
 
 
 @contextmanager
