@@ -62,7 +62,12 @@ def other_clusters() -> list[str]:
     out = subprocess.run(["pgrep", "-fl", CONTENDERS], capture_output=True, text=True).stdout.splitlines()
     me = {str(os.getpid()), str(os.getppid())}
     return [l[:140] for l in out if l.split()[0] not in me and ":360" not in l and "stage12_go_bench" not in l
-            and "pgrep" not in l]
+            and "pgrep" not in l and not is_shell(l)]
+
+
+def is_shell(line: str) -> bool:
+    """An idle interactive/agent shell whose command text mentions the repo path is not a cluster."""
+    return line.split(maxsplit=1)[-1].startswith(("/bin/zsh", "zsh", "-zsh", "/bin/bash", "bash", "tail", "grep"))
 
 
 def wait(cond, timeout: float, step: float = 0.1) -> None:
@@ -346,7 +351,7 @@ def summarize() -> dict:
     rows = [json.loads(l) for l in RUNS.read_text().splitlines() if l.strip()]
     groups: dict[tuple, list] = {}
     for r in rows:
-        if r.get("tag") in ("pilot", "profile"):
+        if r.get("tag") in ("pilot", "profile", "debug"):
             continue
         key = (r["harness"], r["impl"], r["workers"], "chaos" if r.get("killed") else r.get("mode", "max"))
         groups.setdefault(key, []).append(r)
@@ -358,9 +363,15 @@ def summarize() -> dict:
     table = []
     for (harness, impl, nw, mode), rs in sorted(groups.items()):
         thr = [r.get("throughput_events_per_s") or r.get("throughput_events_per_s_end_to_end") for r in rs]
+        cpu = [r.get("worker_cpu_s_per_1M_events") for r in rs]
         table.append({
             "harness": harness, "mode": mode, "impl": impl, "workers": nw, "repeats": len(rs),
             "throughput_median": med(thr), "throughput_min": min(thr), "throughput_max": max(thr),
+            "throughput_runs": thr,
+            "worker_cpu_s_per_1M_events_min": min(cpu), "worker_cpu_s_per_1M_events_max": max(cpu),
+            "e2e_latency_bucket_runs": [r.get("e2e_latency_ms_bucket") for r in rs if r.get("e2e_latency_ms_bucket")],
+            "redis_events_cpu_s_runs": [(r.get("redis_cpu_s") or {}).get("redis-events") for r in rs],
+            "claimed_runs": [r.get("claimed") for r in rs], "duplicates_runs": [r.get("duplicates") for r in rs],
             "seconds_median": med([r.get("seconds") or r.get("total_seconds_until_all_applied") for r in rs]),
             "worker_cpu_s_per_1M_events_median": med([r.get("worker_cpu_s_per_1M_events") for r in rs]),
             "worker_rss_mb_max": max((r.get("worker_rss_mb_max") or 0) for r in rs),
@@ -369,7 +380,8 @@ def summarize() -> dict:
             "mismatched_users_max": max(((r.get("correctness") or {}).get("users_with_mismatched_counters",
                                           r.get("users_with_mismatched_counters", 0)) for r in rs)),
             "duplicates_max": max((r.get("duplicates", r.get("duplicates_skipped", 0)) or 0) for r in rs),
-            "contended_runs": sum(bool(r.get("contention_before") or r.get("contention_after")) for r in rs),
+            "contended_runs": sum(bool([l for l in (r.get("contention_before") or []) + (r.get("contention_after") or [])
+                                        if not is_shell(l)]) for r in rs),
         })
     out = {"kind": "Stage 12: Python vs Go event worker", "source": str(RUNS.relative_to(ROOT)),
            "machine": rows[0]["machine"] if rows else None, "table": table,

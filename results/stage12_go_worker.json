@@ -1,0 +1,914 @@
+{
+ "kind": "Stage 12: Python vs Go event worker",
+ "source": "results/stage12_go_worker_runs.jsonl",
+ "machine": "macOS-27.2.1-arm64-arm-64bit / 8 cores / 24 GB",
+ "table": [
+  {
+   "harness": "drain",
+   "mode": "max",
+   "impl": "go",
+   "workers": 1,
+   "repeats": 3,
+   "throughput_median": 72241.3,
+   "throughput_min": 58636.3,
+   "throughput_max": 76054.3,
+   "throughput_runs": [
+    72241.3,
+    58636.3,
+    76054.3
+   ],
+   "worker_cpu_s_per_1M_events_min": 7.33,
+   "worker_cpu_s_per_1M_events_max": 9.1,
+   "e2e_latency_bucket_runs": [],
+   "redis_events_cpu_s_runs": [
+    58.96,
+    73.31,
+    58.03
+   ],
+   "claimed_runs": [
+    0,
+    0,
+    0
+   ],
+   "duplicates_runs": [
+    0,
+    0,
+    0
+   ],
+   "seconds_median": 173.5,
+   "worker_cpu_s_per_1M_events_median": 7.7,
+   "worker_rss_mb_max": 34.9,
+   "e2e_latency_ms_p50_median": null,
+   "e2e_latency_ms_p99_median": null,
+   "mismatched_users_max": 0,
+   "duplicates_max": 0,
+   "contended_runs": 0
+  },
+  {
+   "harness": "drain",
+   "mode": "max",
+   "impl": "go",
+   "workers": 2,
+   "repeats": 3,
+   "throughput_median": 97574.1,
+   "throughput_min": 95985.1,
+   "throughput_max": 122290.5,
+   "throughput_runs": [
+    97574.1,
+    95985.1,
+    122290.5
+   ],
+   "worker_cpu_s_per_1M_events_min": 8.42,
+   "worker_cpu_s_per_1M_events_max": 10.14,
+   "e2e_latency_bucket_runs": [],
+   "redis_events_cpu_s_runs": [
+    73.48,
+    78.0,
+    60.1
+   ],
+   "claimed_runs": [
+    0,
+    0,
+    0
+   ],
+   "duplicates_runs": [
+    0,
+    0,
+    0
+   ],
+   "seconds_median": 128.4,
+   "worker_cpu_s_per_1M_events_median": 10.0,
+   "worker_rss_mb_max": 29.8,
+   "e2e_latency_ms_p50_median": null,
+   "e2e_latency_ms_p99_median": null,
+   "mismatched_users_max": 0,
+   "duplicates_max": 0,
+   "contended_runs": 0
+  },
+  {
+   "harness": "drain",
+   "mode": "chaos",
+   "impl": "go",
+   "workers": 4,
+   "repeats": 3,
+   "throughput_median": 152079.6,
+   "throughput_min": 151833.9,
+   "throughput_max": 152271.9,
+   "throughput_runs": [
+    152271.9,
+    151833.9,
+    152079.6
+   ],
+   "worker_cpu_s_per_1M_events_min": 10.02,
+   "worker_cpu_s_per_1M_events_max": 10.04,
+   "e2e_latency_bucket_runs": [],
+   "redis_events_cpu_s_runs": [
+    63.49,
+    63.53,
+    63.49
+   ],
+   "claimed_runs": [
+    2000,
+    500,
+    2000
+   ],
+   "duplicates_runs": [
+    500,
+    474,
+    0
+   ],
+   "seconds_median": 82.4,
+   "worker_cpu_s_per_1M_events_median": 10.0,
+   "worker_rss_mb_max": 28.4,
+   "e2e_latency_ms_p50_median": null,
+   "e2e_latency_ms_p99_median": null,
+   "mismatched_users_max": 0,
+   "duplicates_max": 500,
+   "contended_runs": 0
+  },
+  {
+   "harness": "drain",
+   "mode": "max",
+   "impl": "go",
+   "workers": 4,
+   "repeats": 3,
+   "throughput_median": 103040.1,
+   "throughput_min": 95835.8,
+   "throughput_max": 155324.8,
+   "throughput_runs": [
+    103040.1,
+    95835.8,
+    155324.8
+   ],
+   "worker_cpu_s_per_1M_events_min": 10.07,
+   "worker_cpu_s_per_1M_events_max": 13.3,
+   "e2e_latency_bucket_runs": [],
+   "redis_events_cpu_s_runs": [
+    91.23,
+    97.01,
+    62.98
+   ],
+   "claimed_runs": [
+    0,
+    0,
+    0
+   ],
+   "duplicates_runs": [
+    0,
+    0,
+    0
+   ],
+   "seconds_median": 121.6,
+   "worker_cpu_s_per_1M_events_median": 12.7,
+   "worker_rss_mb_max": 28.5,
+   "e2e_latency_ms_p50_median": null,
+   "e2e_latency_ms_p99_median": null,
+   "mismatched_users_max": 0,
+   "duplicates_max": 0,
+   "contended_runs": 0
+  },
+  {
+   "harness": "drain",
+   "mode": "max",
+   "impl": "go",
+   "workers": 8,
+   "repeats": 3,
+   "throughput_median": 149539.1,
+   "throughput_min": 94708.1,
+   "throughput_max": 156297.6,
+   "throughput_runs": [
+    94708.1,
+    149539.1,
+    156297.6
+   ],
+   "worker_cpu_s_per_1M_events_min": 10.66,
+   "worker_cpu_s_per_1M_events_max": 13.03,
+   "e2e_latency_bucket_runs": [],
+   "redis_events_cpu_s_runs": [
+    94.47,
+    66.83,
+    63.43
+   ],
+   "claimed_runs": [
+    0,
+    0,
+    0
+   ],
+   "duplicates_runs": [
+    0,
+    0,
+    0
+   ],
+   "seconds_median": 83.8,
+   "worker_cpu_s_per_1M_events_median": 10.9,
+   "worker_rss_mb_max": 27.3,
+   "e2e_latency_ms_p50_median": null,
+   "e2e_latency_ms_p99_median": null,
+   "mismatched_users_max": 0,
+   "duplicates_max": 0,
+   "contended_runs": 0
+  },
+  {
+   "harness": "drain",
+   "mode": "max",
+   "impl": "python",
+   "workers": 1,
+   "repeats": 3,
+   "throughput_median": 18277.4,
+   "throughput_min": 16105.0,
+   "throughput_max": 18295.0,
+   "throughput_runs": [
+    18277.4,
+    16105.0,
+    18295.0
+   ],
+   "worker_cpu_s_per_1M_events_min": 49.43,
+   "worker_cpu_s_per_1M_events_max": 55.07,
+   "e2e_latency_bucket_runs": [],
+   "redis_events_cpu_s_runs": [
+    58.39,
+    65.27,
+    58.51
+   ],
+   "claimed_runs": [
+    0,
+    0,
+    0
+   ],
+   "duplicates_runs": [
+    0,
+    0,
+    0
+   ],
+   "seconds_median": 685.6,
+   "worker_cpu_s_per_1M_events_median": 49.4,
+   "worker_rss_mb_max": 55.0,
+   "e2e_latency_ms_p50_median": null,
+   "e2e_latency_ms_p99_median": null,
+   "mismatched_users_max": 0,
+   "duplicates_max": 0,
+   "contended_runs": 0
+  },
+  {
+   "harness": "drain",
+   "mode": "max",
+   "impl": "python",
+   "workers": 2,
+   "repeats": 3,
+   "throughput_median": 29813.0,
+   "throughput_min": 28292.8,
+   "throughput_max": 35061.0,
+   "throughput_runs": [
+    29813.0,
+    28292.8,
+    35061.0
+   ],
+   "worker_cpu_s_per_1M_events_min": 50.97,
+   "worker_cpu_s_per_1M_events_max": 62.97,
+   "e2e_latency_bucket_runs": [],
+   "redis_events_cpu_s_runs": [
+    68.63,
+    74.27,
+    60.62
+   ],
+   "claimed_runs": [
+    0,
+    0,
+    0
+   ],
+   "duplicates_runs": [
+    0,
+    0,
+    0
+   ],
+   "seconds_median": 420.3,
+   "worker_cpu_s_per_1M_events_median": 58.8,
+   "worker_rss_mb_max": 46.6,
+   "e2e_latency_ms_p50_median": null,
+   "e2e_latency_ms_p99_median": null,
+   "mismatched_users_max": 0,
+   "duplicates_max": 0,
+   "contended_runs": 0
+  },
+  {
+   "harness": "drain",
+   "mode": "chaos",
+   "impl": "python",
+   "workers": 4,
+   "repeats": 1,
+   "throughput_median": 52420.6,
+   "throughput_min": 52420.6,
+   "throughput_max": 52420.6,
+   "throughput_runs": [
+    52420.6
+   ],
+   "worker_cpu_s_per_1M_events_min": 65.8,
+   "worker_cpu_s_per_1M_events_max": 65.8,
+   "e2e_latency_bucket_runs": [],
+   "redis_events_cpu_s_runs": [
+    75.82
+   ],
+   "claimed_runs": [
+    1000
+   ],
+   "duplicates_runs": [
+    0
+   ],
+   "seconds_median": 239.0,
+   "worker_cpu_s_per_1M_events_median": 65.8,
+   "worker_rss_mb_max": 43.6,
+   "e2e_latency_ms_p50_median": null,
+   "e2e_latency_ms_p99_median": null,
+   "mismatched_users_max": 0,
+   "duplicates_max": 0,
+   "contended_runs": 0
+  },
+  {
+   "harness": "drain",
+   "mode": "max",
+   "impl": "python",
+   "workers": 4,
+   "repeats": 3,
+   "throughput_median": 37449.6,
+   "throughput_min": 35952.4,
+   "throughput_max": 52751.6,
+   "throughput_runs": [
+    35952.4,
+    37449.6,
+    52751.6
+   ],
+   "worker_cpu_s_per_1M_events_min": 65.01,
+   "worker_cpu_s_per_1M_events_max": 92.24,
+   "e2e_latency_bucket_runs": [],
+   "redis_events_cpu_s_runs": [
+    102.88,
+    104.84,
+    75.07
+   ],
+   "claimed_runs": [
+    3000,
+    0,
+    0
+   ],
+   "duplicates_runs": [
+    0,
+    0,
+    0
+   ],
+   "seconds_median": 334.6,
+   "worker_cpu_s_per_1M_events_median": 91.8,
+   "worker_rss_mb_max": 53.0,
+   "e2e_latency_ms_p50_median": null,
+   "e2e_latency_ms_p99_median": null,
+   "mismatched_users_max": 0,
+   "duplicates_max": 0,
+   "contended_runs": 0
+  },
+  {
+   "harness": "drain",
+   "mode": "max",
+   "impl": "python",
+   "workers": 8,
+   "repeats": 3,
+   "throughput_median": 50490.2,
+   "throughput_min": 37552.4,
+   "throughput_max": 65207.6,
+   "throughput_runs": [
+    37552.4,
+    50490.2,
+    65207.6
+   ],
+   "worker_cpu_s_per_1M_events_min": 81.91,
+   "worker_cpu_s_per_1M_events_max": 122.9,
+   "e2e_latency_bucket_runs": [],
+   "redis_events_cpu_s_runs": [
+    127.48,
+    107.29,
+    95.86
+   ],
+   "claimed_runs": [
+    2000,
+    500,
+    1000
+   ],
+   "duplicates_runs": [
+    0,
+    184,
+    0
+   ],
+   "seconds_median": 248.2,
+   "worker_cpu_s_per_1M_events_median": 95.8,
+   "worker_rss_mb_max": 53.1,
+   "e2e_latency_ms_p50_median": null,
+   "e2e_latency_ms_p99_median": null,
+   "mismatched_users_max": 0,
+   "duplicates_max": 184,
+   "contended_runs": 0
+  },
+  {
+   "harness": "replay-api",
+   "mode": "max",
+   "impl": "go",
+   "workers": 4,
+   "repeats": 3,
+   "throughput_median": 85306.3,
+   "throughput_min": 83230.9,
+   "throughput_max": 85370.1,
+   "throughput_runs": [
+    85306.3,
+    85370.1,
+    83230.9
+   ],
+   "worker_cpu_s_per_1M_events_min": 12.53,
+   "worker_cpu_s_per_1M_events_max": 12.66,
+   "e2e_latency_bucket_runs": [
+    {
+     "p50": [
+      3000,
+      4000
+     ],
+     "p95": [
+      7500,
+      10000
+     ],
+     "p99": [
+      10000,
+      15000
+     ]
+    },
+    {
+     "p50": [
+      4000,
+      5000
+     ],
+     "p95": [
+      7500,
+      10000
+     ],
+     "p99": [
+      7500,
+      10000
+     ]
+    },
+    {
+     "p50": [
+      4000,
+      5000
+     ],
+     "p95": [
+      7500,
+      10000
+     ],
+     "p99": [
+      10000,
+      15000
+     ]
+    }
+   ],
+   "redis_events_cpu_s_runs": [
+    null,
+    null,
+    null
+   ],
+   "claimed_runs": [
+    null,
+    null,
+    null
+   ],
+   "duplicates_runs": [
+    0,
+    0,
+    0
+   ],
+   "seconds_median": 146.9,
+   "worker_cpu_s_per_1M_events_median": 12.6,
+   "worker_rss_mb_max": 28.1,
+   "e2e_latency_ms_p50_median": 5000.0,
+   "e2e_latency_ms_p99_median": 15000.0,
+   "mismatched_users_max": 0,
+   "duplicates_max": 0,
+   "contended_runs": 0
+  },
+  {
+   "harness": "replay-api",
+   "mode": "paced10000",
+   "impl": "go",
+   "workers": 4,
+   "repeats": 3,
+   "throughput_median": 9962.3,
+   "throughput_min": 9962.3,
+   "throughput_max": 9962.7,
+   "throughput_runs": [
+    9962.7,
+    9962.3,
+    9962.3
+   ],
+   "worker_cpu_s_per_1M_events_min": 15.67,
+   "worker_cpu_s_per_1M_events_max": 15.83,
+   "e2e_latency_bucket_runs": [
+    {
+     "p50": [
+      20,
+      30
+     ],
+     "p95": [
+      20,
+      30
+     ],
+     "p99": [
+      30,
+      40
+     ]
+    },
+    {
+     "p50": [
+      20,
+      30
+     ],
+     "p95": [
+      20,
+      30
+     ],
+     "p99": [
+      30,
+      40
+     ]
+    },
+    {
+     "p50": [
+      20,
+      30
+     ],
+     "p95": [
+      20,
+      30
+     ],
+     "p99": [
+      40,
+      50
+     ]
+    }
+   ],
+   "redis_events_cpu_s_runs": [
+    null,
+    null,
+    null
+   ],
+   "claimed_runs": [
+    null,
+    null,
+    null
+   ],
+   "duplicates_runs": [
+    0,
+    0,
+    0
+   ],
+   "seconds_median": 120.5,
+   "worker_cpu_s_per_1M_events_median": 15.8,
+   "worker_rss_mb_max": 24.8,
+   "e2e_latency_ms_p50_median": 30.0,
+   "e2e_latency_ms_p99_median": 40.0,
+   "mismatched_users_max": 0,
+   "duplicates_max": 0,
+   "contended_runs": 0
+  },
+  {
+   "harness": "replay-api",
+   "mode": "paced25000",
+   "impl": "go",
+   "workers": 4,
+   "repeats": 3,
+   "throughput_median": 24874.2,
+   "throughput_min": 24865.8,
+   "throughput_max": 24875.2,
+   "throughput_runs": [
+    24865.8,
+    24875.2,
+    24874.2
+   ],
+   "worker_cpu_s_per_1M_events_min": 13.8,
+   "worker_cpu_s_per_1M_events_max": 14.12,
+   "e2e_latency_bucket_runs": [
+    {
+     "p50": [
+      15,
+      20
+     ],
+     "p95": [
+      20,
+      30
+     ],
+     "p99": [
+      30,
+      40
+     ]
+    },
+    {
+     "p50": [
+      15,
+      20
+     ],
+     "p95": [
+      20,
+      30
+     ],
+     "p99": [
+      20,
+      30
+     ]
+    },
+    {
+     "p50": [
+      15,
+      20
+     ],
+     "p95": [
+      20,
+      30
+     ],
+     "p99": [
+      30,
+      40
+     ]
+    }
+   ],
+   "redis_events_cpu_s_runs": [
+    null,
+    null,
+    null
+   ],
+   "claimed_runs": [
+    null,
+    null,
+    null
+   ],
+   "duplicates_runs": [
+    0,
+    0,
+    0
+   ],
+   "seconds_median": 100.5,
+   "worker_cpu_s_per_1M_events_median": 13.9,
+   "worker_rss_mb_max": 25.5,
+   "e2e_latency_ms_p50_median": 20.0,
+   "e2e_latency_ms_p99_median": 40.0,
+   "mismatched_users_max": 0,
+   "duplicates_max": 0,
+   "contended_runs": 0
+  },
+  {
+   "harness": "replay-api",
+   "mode": "max",
+   "impl": "python",
+   "workers": 4,
+   "repeats": 3,
+   "throughput_median": 42275.8,
+   "throughput_min": 41670.1,
+   "throughput_max": 42295.2,
+   "throughput_runs": [
+    42275.8,
+    42295.2,
+    41670.1
+   ],
+   "worker_cpu_s_per_1M_events_min": 74.17,
+   "worker_cpu_s_per_1M_events_max": 75.32,
+   "e2e_latency_bucket_runs": [
+    {
+     "p50": [
+      10000,
+      15000
+     ],
+     "p95": [
+      15000,
+      20000
+     ],
+     "p99": [
+      15000,
+      20000
+     ]
+    },
+    {
+     "p50": [
+      10000,
+      15000
+     ],
+     "p95": [
+      15000,
+      20000
+     ],
+     "p99": [
+      15000,
+      20000
+     ]
+    },
+    {
+     "p50": [
+      10000,
+      15000
+     ],
+     "p95": [
+      15000,
+      20000
+     ],
+     "p99": [
+      20000,
+      30000
+     ]
+    }
+   ],
+   "redis_events_cpu_s_runs": [
+    null,
+    null,
+    null
+   ],
+   "claimed_runs": [
+    null,
+    null,
+    null
+   ],
+   "duplicates_runs": [
+    0,
+    0,
+    0
+   ],
+   "seconds_median": 296.4,
+   "worker_cpu_s_per_1M_events_median": 74.3,
+   "worker_rss_mb_max": 43.1,
+   "e2e_latency_ms_p50_median": 15000.0,
+   "e2e_latency_ms_p99_median": 20000.0,
+   "mismatched_users_max": 0,
+   "duplicates_max": 0,
+   "contended_runs": 0
+  },
+  {
+   "harness": "replay-api",
+   "mode": "paced10000",
+   "impl": "python",
+   "workers": 4,
+   "repeats": 3,
+   "throughput_median": 9963.1,
+   "throughput_min": 9963.0,
+   "throughput_max": 9963.3,
+   "throughput_runs": [
+    9963.0,
+    9963.1,
+    9963.3
+   ],
+   "worker_cpu_s_per_1M_events_min": 62.5,
+   "worker_cpu_s_per_1M_events_max": 62.75,
+   "e2e_latency_bucket_runs": [
+    {
+     "p50": [
+      30,
+      40
+     ],
+     "p95": [
+      30,
+      40
+     ],
+     "p99": [
+      40,
+      50
+     ]
+    },
+    {
+     "p50": [
+      30,
+      40
+     ],
+     "p95": [
+      30,
+      40
+     ],
+     "p99": [
+      40,
+      50
+     ]
+    },
+    {
+     "p50": [
+      30,
+      40
+     ],
+     "p95": [
+      30,
+      40
+     ],
+     "p99": [
+      40,
+      50
+     ]
+    }
+   ],
+   "redis_events_cpu_s_runs": [
+    null,
+    null,
+    null
+   ],
+   "claimed_runs": [
+    null,
+    null,
+    null
+   ],
+   "duplicates_runs": [
+    0,
+    0,
+    0
+   ],
+   "seconds_median": 120.4,
+   "worker_cpu_s_per_1M_events_median": 62.6,
+   "worker_rss_mb_max": 40.1,
+   "e2e_latency_ms_p50_median": 40.0,
+   "e2e_latency_ms_p99_median": 50.0,
+   "mismatched_users_max": 0,
+   "duplicates_max": 0,
+   "contended_runs": 0
+  },
+  {
+   "harness": "replay-api",
+   "mode": "paced25000",
+   "impl": "python",
+   "workers": 4,
+   "repeats": 3,
+   "throughput_median": 24877.0,
+   "throughput_min": 24876.6,
+   "throughput_max": 24877.4,
+   "throughput_runs": [
+    24877.4,
+    24877.0,
+    24876.6
+   ],
+   "worker_cpu_s_per_1M_events_min": 59.8,
+   "worker_cpu_s_per_1M_events_max": 60.4,
+   "e2e_latency_bucket_runs": [
+    {
+     "p50": [
+      20,
+      30
+     ],
+     "p95": [
+      30,
+      40
+     ],
+     "p99": [
+      40,
+      50
+     ]
+    },
+    {
+     "p50": [
+      20,
+      30
+     ],
+     "p95": [
+      30,
+      40
+     ],
+     "p99": [
+      40,
+      50
+     ]
+    },
+    {
+     "p50": [
+      20,
+      30
+     ],
+     "p95": [
+      30,
+      40
+     ],
+     "p99": [
+      50,
+      75
+     ]
+    }
+   ],
+   "redis_events_cpu_s_runs": [
+    null,
+    null,
+    null
+   ],
+   "claimed_runs": [
+    null,
+    null,
+    null
+   ],
+   "duplicates_runs": [
+    0,
+    0,
+    0
+   ],
+   "seconds_median": 100.5,
+   "worker_cpu_s_per_1M_events_median": 59.9,
+   "worker_rss_mb_max": 40.9,
+   "e2e_latency_ms_p50_median": 30.0,
+   "e2e_latency_ms_p99_median": 50.0,
+   "mismatched_users_max": 0,
+   "duplicates_max": 0,
+   "contended_runs": 0
+  }
+ ],
+ "date": "2026-11-23 03:19"
+}
