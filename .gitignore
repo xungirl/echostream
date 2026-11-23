@@ -16,3 +16,4 @@ web/dist/
 web/test-results/
 .DS_Store
 *.log
+*.egg-info/
