@@ -1,4 +1,4 @@
-"""echostream (回响流转) — Every swipe echoes. 每一次划动，都有回响。
+"""echostream (流光回响) — Every swipe echoes. 每一次划动，都有回响。
 
 macOS note: the faiss, torch and LightGBM wheels each ship their own copy of libomp.
 Rule in this repo: a process imports torch OR (faiss and/or LightGBM), not both. Training uses

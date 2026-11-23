@@ -241,7 +241,7 @@ files["lockup-horizontal-black.svg"] = lockup_h("black", BLACK)
 files["lockup-horizontal-white.svg"] = lockup_h("white", WHITE)
 
 
-# bilingual lockup: mark + echostream over 回响流转 (justified to the same width)
+# bilingual lockup: mark + echostream over 流光回响 (justified to the same width)
 def lockup_cn(variant, col_en, col_cn):
     PAD = 40
     fs_en = 112
@@ -250,7 +250,7 @@ def lockup_cn(variant, col_en, col_cn):
     en_asc = -bb_en[1]                       # height above baseline
     # CN: left-aligned with the wordmark, gentle tracking
     track = 0.14
-    _, cw, cb = text_path(F_CJK, "回响流转", fs_cn, 0, 0, track=track)
+    _, cw, cb = text_path(F_CJK, "流光回响", fs_cn, 0, 0, track=track)
     gap = fs_cn / PHI ** 2
     cn_top_from_base = -cb[1]
     block_h = en_asc + gap + cn_top_from_base + cb[3]
@@ -260,7 +260,7 @@ def lockup_cn(variant, col_en, col_cn):
     base_en = PAD + en_asc
     wm, wb = wordmark(tx - bb_en[0], base_en, fs_en, col_en, col_en)
     base_cn = base_en + gap + cn_top_from_base
-    dcn, _, cbb = text_path(F_CJK, "回响流转", fs_cn, tx - cb[0], base_cn, track=track)
+    dcn, _, cbb = text_path(F_CJK, "流光回响", fs_cn, tx - cb[0], base_cn, track=track)
     W = math.ceil(max(wb[2], cbb[2]) + PAD)
     Hh = math.ceil(PAD * 2 + H)
     return svg(W, Hh, mk + wm + f'<path d="{dcn}" fill="{col_cn}"/>', mark_defs("c"))

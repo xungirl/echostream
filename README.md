@@ -1,4 +1,4 @@
-<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/brand/svg/lockup-bilingual-on-dark.svg"><img src="docs/brand/svg/lockup-bilingual-color.svg" alt="echostream · 回响流转" width="460"></picture></p>
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/brand/svg/lockup-bilingual-on-dark.svg"><img src="docs/brand/svg/lockup-bilingual-color.svg" alt="echostream · 流光回响" width="460"></picture></p>
 
 <p align="center">
   <b>Every swipe echoes.</b><br/>
@@ -20,7 +20,7 @@ echostream is a scaled-down replica of the architecture behind a Douyin / TikTok
 It runs on **KuaiRec**, a real short-video interaction dataset released by Kuaishou, not synthetic data. Every number in this repo comes from a run on real hardware, and each one is labeled as either a quality result or a systems test.
 
 **中文**
-回响流转是抖音、TikTok「推荐页」背后架构的缩小版。它是一个后端服务，不是手机 App。客户端问「用户 42 下一屏该看什么」，它在严格的延迟预算内返回一个排好序的推荐列表。用户看完或划走一个视频，这个行为会流回系统，马上改变下一次推荐。这个闭环就是「回响」。
+流光回响是抖音、TikTok「推荐页」背后架构的缩小版。它是一个后端服务，不是手机 App。客户端问「用户 42 下一屏该看什么」，它在严格的延迟预算内返回一个排好序的推荐列表。用户看完或划走一个视频，这个行为会流回系统，马上改变下一次推荐。这个闭环就是「回响」。
 
 数据用的是快手公开的真实短视频数据集 **KuaiRec**，不是模拟数据。仓库里每个数字都来自真实运行，并且标明它是推荐质量结果，还是系统测试结果。
 

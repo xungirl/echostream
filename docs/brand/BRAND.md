@@ -1,4 +1,4 @@
-# echostream · 回响流转 — logo
+# echostream · 流光回响 — logo
 
 ## Mark
 A 5-4-3-2-1 dot funnel: video pool → 4-way recall → LightGBM rank → MMR re-rank → next screen.

@@ -1,4 +1,4 @@
-# echostream web demo · 回响流转
+# echostream web demo · 流光回响
 
 A small Vite + React 18 + TypeScript front end for the echostream cluster. No UI or chart
 library: plain CSS and inline SVG.
