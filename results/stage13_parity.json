@@ -1,0 +1,104 @@
+{
+ "what": "TypeScript engine vs the Python read path (scripts/gen_browser_golden.py), same bundle, users and events",
+ "node": "v25.9.0",
+ "date": "2026-11-23",
+ "sessions": 50,
+ "screens": 300,
+ "stage": {
+  "userVecMaxAbsDiff": 8.940696716308594e-8,
+  "paths": {
+   "two_tower": {
+    "lists": 300,
+    "identical": 300,
+    "equivalent": 300,
+    "maxAbsScoreDiff": 1.7881393432617188e-7
+   },
+   "itemcf": {
+    "lists": 300,
+    "identical": 282,
+    "equivalent": 300,
+    "maxAbsScoreDiff": 0
+   },
+   "pop_recent": {
+    "lists": 300,
+    "identical": 162,
+    "equivalent": 300,
+    "maxAbsScoreDiff": 0
+   },
+   "pop_platform": {
+    "lists": 300,
+    "identical": 300,
+    "equivalent": 300,
+    "maxAbsScoreDiff": 0
+   },
+   "content": {
+    "lists": 300,
+    "identical": 281,
+    "equivalent": 300,
+    "maxAbsScoreDiff": 8.940696716308594e-8
+   }
+  },
+  "mergeIdentical": 300,
+  "featureRows": 4000,
+  "featureValues": 160000,
+  "featureExact": 149374,
+  "featureMaxAbsDiff": 5.960464477539062e-7,
+  "featureMaxAbsDiffByName": {
+   "u_n": 0,
+   "u_pos": 0,
+   "u_pos_rate": 0,
+   "u_mean_wr": 0,
+   "u_active_degree": 0,
+   "u_days_active": 0,
+   "all_like_rate": 0,
+   "all_complete_rate": 0,
+   "all_play_rate": 0,
+   "r7_like_rate": 0,
+   "r7_complete_rate": 0,
+   "r7_play_rate": 0,
+   "log_all_show": 0,
+   "log_r7_show": 0,
+   "log_r7_like": 0,
+   "video_duration_s": 0,
+   "age_days": 0,
+   "hist_n": 0,
+   "hist_pos": 0,
+   "hist_pos_rate": 0,
+   "cat_affinity": 5.960464477539063e-8,
+   "dur_gap": 0,
+   "score_two_tower": 1.7881393432617188e-7,
+   "score_itemcf": 0,
+   "score_pop_recent": 0,
+   "score_pop_platform": 0,
+   "score_content": 5.960464477539063e-8,
+   "in_two_tower": 0,
+   "in_itemcf": 0,
+   "in_pop_recent": 0,
+   "in_pop_platform": 0,
+   "in_content": 0,
+   "n_paths": 0,
+   "rt_n": 0,
+   "rt_pos_rate": 0,
+   "rt_skip_rate": 0,
+   "rt_cat_pos": 0,
+   "rt_cat_skip": 0,
+   "rt_max_sim": 5.960464477539062e-7,
+   "rt_mean_sim": 3.5762786865234375e-7
+  },
+  "treeRows": 4000,
+  "treeMaxAbsDiff": 1.3877787807814457e-17,
+  "mmrIdentical": 300
+ },
+ "endToEnd": {
+  "mergedIdentical": 246,
+  "rankMaxAbsDiff": 5.551115123125783e-17,
+  "shownIdentical": 300,
+  "shownMismatches": []
+ },
+ "node_compute_ms": {
+  "n": 300,
+  "median": 11.174291999999696,
+  "p95": 12.700458000000026,
+  "note": "Node.js (vitest-free), not a browser"
+ }
+}
