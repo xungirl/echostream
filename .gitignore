@@ -1,0 +1,18 @@
+# data, artifacts, caches -- never committed (make data re-downloads)
+data/
+artifacts/
+.cache/
+.run/
+*.parquet
+*.npy
+*.faiss
+*.pt
+*.lgb
+__pycache__/
+.venv/
+.pytest_cache/
+web/node_modules/
+web/dist/
+web/test-results/
+.DS_Store
+*.log
