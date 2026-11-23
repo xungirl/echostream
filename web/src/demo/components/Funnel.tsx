@@ -58,7 +58,7 @@ export default function Funnel({ model, step }: { model: Model; step: Step }) {
           {c.quotas.content === 0 && (
             <p className="note">
               “New &amp; similar” has a merge quota of 0 in this model version (quotas were tuned on validation data in Stage 3), so
-              its videos only count as a signal for the ranker.
+              its videos get in only when the other paths leave slots empty; otherwise they count as a signal for the ranker.
             </p>
           )}
         </li>
