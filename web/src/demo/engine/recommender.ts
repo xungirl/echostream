@@ -19,6 +19,7 @@ export interface Screen {
   uid: number;
   userVec: Float32Array;
   histPos: number[]; // batch positives + real-time positives (the model's view of "liked")
+  nExcluded: number; // videos skipped as already seen (batch history + real-time events)
   paths: Paths; // each path's top 200
   merged: Candidate[]; // after the quota merge, in merge order
   rankScores: Float64Array; // ranker probability per merged candidate (merge order)
@@ -46,6 +47,7 @@ export function recommend(m: Model, user: UserRecord, store: RealtimeStore, n = 
   const excluded = new Uint8Array(m.nItems);
   for (const i of user.seen) excluded[i] = 1;
   for (const e of rt) excluded[e.item] = 1;
+  const nExcluded = excluded.reduce((a, b) => a + b, 0);
   const recent: [number, number][] = [
     ...user.recent_items.map((i, k): [number, number] => [i, user.recent_wr[k]]),
     ...rt.map((e): [number, number] => [e.item, e.wr]),
@@ -81,7 +83,7 @@ export function recommend(m: Model, user: UserRecord, store: RealtimeStore, n = 
   const shown = pick.map((j) => top[j]);
   lap("mmr");
   times.total = now() - t0;
-  return { uid: user.uid, userVec: uvec, histPos, paths, merged, rankScores, ranked, shown, timingsMs: times };
+  return { uid: user.uid, userVec: uvec, histPos, nExcluded, paths, merged, rankScores, ranked, shown, timingsMs: times };
 }
 
 export { PATHS };

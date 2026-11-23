@@ -258,15 +258,20 @@ export function decodeModel(
   };
 }
 
+export interface LoadTimings {
+  downloadMs: number;
+  decodeMs: number;
+}
+
 /** Fetch the bundle (relative URL, so the page works from any sub-path). Reports download progress. */
-export async function loadModel(base: string, onProgress?: (loaded: number, total: number) => void): Promise<Model> {
+export async function loadModel(
+  base: string,
+  onProgress?: (loaded: number, total: number) => void,
+): Promise<{ model: Model; timings: LoadTimings }> {
+  const t0 = performance.now();
   const manifest: Manifest = await (await fetch(`${base}manifest.json`)).json();
   const total = Object.values(manifest.files).reduce((s, f) => s + f.bytes, 0);
   let loaded = 0;
-  const tick = (n: number) => {
-    loaded += n;
-    onProgress?.(loaded, total);
-  };
   const fetchBytes = async (name: string): Promise<ArrayBuffer> => {
     const res = await fetch(`${base}${name}`);
     if (!res.ok || !res.body) throw new Error(`${name}: HTTP ${res.status}`);
@@ -278,7 +283,8 @@ export async function loadModel(base: string, onProgress?: (loaded: number, tota
       if (done) break;
       parts.push(value);
       size += value.length;
-      tick(value.length);
+      loaded += value.length; // bytes after any transport decompression (= file size on disk)
+      onProgress?.(Math.min(loaded, total), total);
     }
     const out = new Uint8Array(size);
     let o = 0;
@@ -289,11 +295,16 @@ export async function loadModel(base: string, onProgress?: (loaded: number, tota
     return out.buffer;
   };
   const text = async (name: string) => JSON.parse(new TextDecoder().decode(await fetchBytes(name)));
-  const [bin, ranker, catalog, users] = await Promise.all([
+  const gunzip = async (buf: ArrayBuffer) =>
+    new Response(new Response(buf).body!.pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
+  const [binGz, ranker, catalog, users] = await Promise.all([
     fetchBytes(manifest.model_file),
     text("ranker.json"),
     text("catalog.json"),
     text("users.json"),
   ]);
-  return decodeModel(manifest, bin, ranker, catalog, users.users);
+  const t1 = performance.now();
+  const bin = manifest.model_file.endsWith(".gz") ? await gunzip(binGz) : binGz;
+  const model = decodeModel(manifest, bin, ranker, catalog, users.users);
+  return { model, timings: { downloadMs: t1 - t0, decodeMs: performance.now() - t1 } };
 }
