@@ -1,0 +1,923 @@
+{
+  "kind": "real-event replay (KuaiRec big_matrix, original time order)",
+  "machine": "macOS-27.2.1-arm64-arm-64bit",
+  "events": 1200000,
+  "target_rate": 10000.0,
+  "batch": 1000,
+  "cluster": "4 API replicas + nginx, 8 partitions, 4 workers, 3 feature nodes",
+  "produce_seconds": 119.9,
+  "total_seconds_until_all_applied": 120.4,
+  "throughput_events_per_s_end_to_end": 9963.1,
+  "applied_rate_per_s_median": 9973.8,
+  "applied_rate_per_s_p10": 9794.0,
+  "applied": 1200000,
+  "duplicates_skipped": 0,
+  "dlq": 0,
+  "failed_batches": 0,
+  "e2e_latency_ms_bucket_upper_bounds": {
+    "p50": 40,
+    "p95": 40,
+    "p99": 50
+  },
+  "e2e_latency_ms_bucket": {
+    "p50": [
+      30,
+      40
+    ],
+    "p95": [
+      30,
+      40
+    ],
+    "p99": [
+      40,
+      50
+    ]
+  },
+  "latency_buckets_ms": [
+    0.5,
+    1,
+    1.5,
+    2,
+    3,
+    4,
+    5,
+    7.5,
+    10,
+    15,
+    20,
+    30,
+    40,
+    50,
+    75,
+    100,
+    150,
+    200,
+    300,
+    400,
+    500,
+    750,
+    1000,
+    1500,
+    2000,
+    3000,
+    4000,
+    5000,
+    7500,
+    10000,
+    15000,
+    20000,
+    30000,
+    45000,
+    60000,
+    90000,
+    120000,
+    180000,
+    300000,
+    "inf"
+  ],
+  "latency_histogram": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    59,
+    2696,
+    222742,
+    950618,
+    14344,
+    7353,
+    2188,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "worker_impl": "python",
+  "n_workers": 4,
+  "processes": {
+    "redis-events": {
+      "cpu_s": 11.17,
+      "rss_mb_max": 10.2,
+      "rss_mb_median": 10.1
+    },
+    "redis-feat0": {
+      "cpu_s": 5.59,
+      "rss_mb_max": 58.0,
+      "rss_mb_median": 36.4
+    },
+    "redis-feat1": {
+      "cpu_s": 5.82,
+      "rss_mb_max": 58.2,
+      "rss_mb_median": 35.9
+    },
+    "redis-feat2": {
+      "cpu_s": 5.86,
+      "rss_mb_max": 58.0,
+      "rss_mb_median": 35.5
+    },
+    "worker0": {
+      "cpu_s": 18.64,
+      "rss_mb_max": 39.2,
+      "rss_mb_median": 39.2
+    },
+    "worker1": {
+      "cpu_s": 18.76,
+      "rss_mb_max": 39.5,
+      "rss_mb_median": 39.4
+    },
+    "worker2": {
+      "cpu_s": 19.17,
+      "rss_mb_max": 39.3,
+      "rss_mb_median": 39.2
+    },
+    "worker3": {
+      "cpu_s": 18.71,
+      "rss_mb_max": 40.1,
+      "rss_mb_median": 40.1
+    },
+    "api0": {
+      "cpu_s": 7.12,
+      "rss_mb_max": 497.4,
+      "rss_mb_median": 497.3
+    },
+    "api1": {
+      "cpu_s": 7.08,
+      "rss_mb_max": 496.9,
+      "rss_mb_median": 496.8
+    },
+    "api2": {
+      "cpu_s": 7.08,
+      "rss_mb_max": 496.5,
+      "rss_mb_median": 496.5
+    },
+    "api3": {
+      "cpu_s": 7.11,
+      "rss_mb_max": 497.3,
+      "rss_mb_median": 497.2
+    },
+    "nginx": {
+      "cpu_s": 0.0,
+      "rss_mb_max": 5.8,
+      "rss_mb_median": 5.8
+    }
+  },
+  "worker_cpu_s_total": 75.3,
+  "worker_rss_mb_max": 40.1,
+  "api_cpu_s_total": 28.4,
+  "max_backlog": 1000,
+  "users_checked": 7176,
+  "users_with_mismatched_counters": 0,
+  "feature_node_memory": {
+    "feat0": "39.23M",
+    "feat1": "40.99M",
+    "feat2": "41.54M"
+  },
+  "timeline": [
+    {
+      "t": 0.01,
+      "produced": 0,
+      "applied": 0,
+      "backlog": 0
+    },
+    {
+      "t": 1.01,
+      "produced": 10000,
+      "applied": 7079,
+      "backlog": 0
+    },
+    {
+      "t": 2.03,
+      "produced": 20000,
+      "applied": 16968,
+      "backlog": 0
+    },
+    {
+      "t": 3.03,
+      "produced": 31000,
+      "applied": 27040,
+      "backlog": 999
+    },
+    {
+      "t": 4.03,
+      "produced": 41000,
+      "applied": 37010,
+      "backlog": 999
+    },
+    {
+      "t": 5.04,
+      "produced": 51000,
+      "applied": 47025,
+      "backlog": 880
+    },
+    {
+      "t": 6.05,
+      "produced": 61000,
+      "applied": 57035,
+      "backlog": 504
+    },
+    {
+      "t": 7.06,
+      "produced": 71000,
+      "applied": 67009,
+      "backlog": 0
+    },
+    {
+      "t": 8.07,
+      "produced": 81000,
+      "applied": 77019,
+      "backlog": 0
+    },
+    {
+      "t": 9.08,
+      "produced": 91000,
+      "applied": 87450,
+      "backlog": 0
+    },
+    {
+      "t": 10.09,
+      "produced": 101000,
+      "applied": 97487,
+      "backlog": 0
+    },
+    {
+      "t": 11.09,
+      "produced": 111000,
+      "applied": 107492,
+      "backlog": 0
+    },
+    {
+      "t": 12.11,
+      "produced": 121000,
+      "applied": 117512,
+      "backlog": 0
+    },
+    {
+      "t": 13.12,
+      "produced": 131000,
+      "applied": 128712,
+      "backlog": 0
+    },
+    {
+      "t": 14.13,
+      "produced": 141000,
+      "applied": 138723,
+      "backlog": 334
+    },
+    {
+      "t": 15.13,
+      "produced": 152000,
+      "applied": 147563,
+      "backlog": 996
+    },
+    {
+      "t": 16.14,
+      "produced": 162000,
+      "applied": 157934,
+      "backlog": 887
+    },
+    {
+      "t": 17.14,
+      "produced": 172000,
+      "applied": 168054,
+      "backlog": 869
+    },
+    {
+      "t": 18.15,
+      "produced": 182000,
+      "applied": 177995,
+      "backlog": 317
+    },
+    {
+      "t": 19.15,
+      "produced": 192000,
+      "applied": 189251,
+      "backlog": 0
+    },
+    {
+      "t": 20.16,
+      "produced": 202000,
+      "applied": 199161,
+      "backlog": 0
+    },
+    {
+      "t": 21.17,
+      "produced": 212000,
+      "applied": 208043,
+      "backlog": 996
+    },
+    {
+      "t": 22.18,
+      "produced": 222000,
+      "applied": 217924,
+      "backlog": 0
+    },
+    {
+      "t": 23.19,
+      "produced": 232000,
+      "applied": 227998,
+      "backlog": 0
+    },
+    {
+      "t": 24.19,
+      "produced": 242000,
+      "applied": 238048,
+      "backlog": 0
+    },
+    {
+      "t": 25.2,
+      "produced": 252000,
+      "applied": 248286,
+      "backlog": 0
+    },
+    {
+      "t": 26.21,
+      "produced": 262000,
+      "applied": 258381,
+      "backlog": 0
+    },
+    {
+      "t": 27.21,
+      "produced": 272000,
+      "applied": 269775,
+      "backlog": 0
+    },
+    {
+      "t": 28.22,
+      "produced": 282000,
+      "applied": 279751,
+      "backlog": 0
+    },
+    {
+      "t": 29.22,
+      "produced": 292000,
+      "applied": 289682,
+      "backlog": 0
+    },
+    {
+      "t": 30.23,
+      "produced": 302000,
+      "applied": 298512,
+      "backlog": 811
+    },
+    {
+      "t": 31.23,
+      "produced": 313000,
+      "applied": 308627,
+      "backlog": 999
+    },
+    {
+      "t": 32.23,
+      "produced": 323000,
+      "applied": 318739,
+      "backlog": 999
+    },
+    {
+      "t": 33.24,
+      "produced": 333000,
+      "applied": 328841,
+      "backlog": 875
+    },
+    {
+      "t": 34.25,
+      "produced": 343000,
+      "applied": 338973,
+      "backlog": 753
+    },
+    {
+      "t": 35.25,
+      "produced": 353000,
+      "applied": 348985,
+      "backlog": 281
+    },
+    {
+      "t": 36.25,
+      "produced": 363000,
+      "applied": 358995,
+      "backlog": 128
+    },
+    {
+      "t": 37.26,
+      "produced": 373000,
+      "applied": 369022,
+      "backlog": 0
+    },
+    {
+      "t": 38.27,
+      "produced": 383000,
+      "applied": 378998,
+      "backlog": 0
+    },
+    {
+      "t": 39.28,
+      "produced": 393000,
+      "applied": 389027,
+      "backlog": 0
+    },
+    {
+      "t": 40.29,
+      "produced": 403000,
+      "applied": 400436,
+      "backlog": 0
+    },
+    {
+      "t": 41.3,
+      "produced": 413000,
+      "applied": 410431,
+      "backlog": 0
+    },
+    {
+      "t": 42.3,
+      "produced": 423000,
+      "applied": 420567,
+      "backlog": 0
+    },
+    {
+      "t": 43.31,
+      "produced": 433000,
+      "applied": 430788,
+      "backlog": 0
+    },
+    {
+      "t": 44.31,
+      "produced": 443000,
+      "applied": 439416,
+      "backlog": 0
+    },
+    {
+      "t": 45.31,
+      "produced": 453000,
+      "applied": 449463,
+      "backlog": 0
+    },
+    {
+      "t": 46.32,
+      "produced": 463000,
+      "applied": 460783,
+      "backlog": 0
+    },
+    {
+      "t": 47.33,
+      "produced": 474000,
+      "applied": 470719,
+      "backlog": 1000
+    },
+    {
+      "t": 48.34,
+      "produced": 484000,
+      "applied": 479518,
+      "backlog": 877
+    },
+    {
+      "t": 49.35,
+      "produced": 494000,
+      "applied": 489848,
+      "backlog": 370
+    },
+    {
+      "t": 50.35,
+      "produced": 504000,
+      "applied": 501304,
+      "backlog": 0
+    },
+    {
+      "t": 51.36,
+      "produced": 514000,
+      "applied": 511178,
+      "backlog": 0
+    },
+    {
+      "t": 52.37,
+      "produced": 524000,
+      "applied": 521170,
+      "backlog": 0
+    },
+    {
+      "t": 53.37,
+      "produced": 534000,
+      "applied": 531215,
+      "backlog": 0
+    },
+    {
+      "t": 54.38,
+      "produced": 544000,
+      "applied": 541275,
+      "backlog": 0
+    },
+    {
+      "t": 55.38,
+      "produced": 554000,
+      "applied": 551245,
+      "backlog": 0
+    },
+    {
+      "t": 56.39,
+      "produced": 564000,
+      "applied": 561214,
+      "backlog": 0
+    },
+    {
+      "t": 57.39,
+      "produced": 574000,
+      "applied": 571359,
+      "backlog": 0
+    },
+    {
+      "t": 58.41,
+      "produced": 584000,
+      "applied": 581626,
+      "backlog": 0
+    },
+    {
+      "t": 59.42,
+      "produced": 594000,
+      "applied": 591423,
+      "backlog": 0
+    },
+    {
+      "t": 60.42,
+      "produced": 604000,
+      "applied": 601676,
+      "backlog": 0
+    },
+    {
+      "t": 61.43,
+      "produced": 615000,
+      "applied": 611738,
+      "backlog": 996
+    },
+    {
+      "t": 62.44,
+      "produced": 625000,
+      "applied": 621678,
+      "backlog": 1000
+    },
+    {
+      "t": 63.44,
+      "produced": 635000,
+      "applied": 631631,
+      "backlog": 640
+    },
+    {
+      "t": 64.45,
+      "produced": 645000,
+      "applied": 642018,
+      "backlog": 116
+    },
+    {
+      "t": 65.46,
+      "produced": 655000,
+      "applied": 652086,
+      "backlog": 0
+    },
+    {
+      "t": 66.47,
+      "produced": 665000,
+      "applied": 662165,
+      "backlog": 0
+    },
+    {
+      "t": 67.48,
+      "produced": 675000,
+      "applied": 672329,
+      "backlog": 0
+    },
+    {
+      "t": 68.49,
+      "produced": 685000,
+      "applied": 682159,
+      "backlog": 0
+    },
+    {
+      "t": 69.5,
+      "produced": 695000,
+      "applied": 692141,
+      "backlog": 0
+    },
+    {
+      "t": 70.51,
+      "produced": 705000,
+      "applied": 702163,
+      "backlog": 0
+    },
+    {
+      "t": 71.51,
+      "produced": 715000,
+      "applied": 712261,
+      "backlog": 0
+    },
+    {
+      "t": 72.53,
+      "produced": 725000,
+      "applied": 722253,
+      "backlog": 129
+    },
+    {
+      "t": 73.53,
+      "produced": 736000,
+      "applied": 732421,
+      "backlog": 999
+    },
+    {
+      "t": 74.54,
+      "produced": 746000,
+      "applied": 742562,
+      "backlog": 404
+    },
+    {
+      "t": 75.55,
+      "produced": 756000,
+      "applied": 752582,
+      "backlog": 151
+    },
+    {
+      "t": 76.55,
+      "produced": 766000,
+      "applied": 762753,
+      "backlog": 0
+    },
+    {
+      "t": 77.56,
+      "produced": 776000,
+      "applied": 772744,
+      "backlog": 0
+    },
+    {
+      "t": 78.57,
+      "produced": 786000,
+      "applied": 782689,
+      "backlog": 0
+    },
+    {
+      "t": 79.58,
+      "produced": 796000,
+      "applied": 792653,
+      "backlog": 0
+    },
+    {
+      "t": 80.59,
+      "produced": 806000,
+      "applied": 802976,
+      "backlog": 0
+    },
+    {
+      "t": 81.6,
+      "produced": 816000,
+      "applied": 813083,
+      "backlog": 0
+    },
+    {
+      "t": 82.61,
+      "produced": 826000,
+      "applied": 823193,
+      "backlog": 0
+    },
+    {
+      "t": 83.61,
+      "produced": 836000,
+      "applied": 833280,
+      "backlog": 0
+    },
+    {
+      "t": 84.62,
+      "produced": 846000,
+      "applied": 843120,
+      "backlog": 0
+    },
+    {
+      "t": 85.63,
+      "produced": 856000,
+      "applied": 853150,
+      "backlog": 863
+    },
+    {
+      "t": 86.64,
+      "produced": 867000,
+      "applied": 863220,
+      "backlog": 913
+    },
+    {
+      "t": 87.64,
+      "produced": 877000,
+      "applied": 873192,
+      "backlog": 685
+    },
+    {
+      "t": 88.65,
+      "produced": 887000,
+      "applied": 883281,
+      "backlog": 286
+    },
+    {
+      "t": 89.65,
+      "produced": 897000,
+      "applied": 893445,
+      "backlog": 0
+    },
+    {
+      "t": 90.66,
+      "produced": 907000,
+      "applied": 903521,
+      "backlog": 0
+    },
+    {
+      "t": 91.67,
+      "produced": 917000,
+      "applied": 913773,
+      "backlog": 0
+    },
+    {
+      "t": 92.67,
+      "produced": 927000,
+      "applied": 923764,
+      "backlog": 0
+    },
+    {
+      "t": 93.68,
+      "produced": 937000,
+      "applied": 933730,
+      "backlog": 0
+    },
+    {
+      "t": 94.69,
+      "produced": 947000,
+      "applied": 943803,
+      "backlog": 0
+    },
+    {
+      "t": 95.7,
+      "produced": 957000,
+      "applied": 953760,
+      "backlog": 0
+    },
+    {
+      "t": 96.7,
+      "produced": 967000,
+      "applied": 964067,
+      "backlog": 0
+    },
+    {
+      "t": 97.71,
+      "produced": 977000,
+      "applied": 973958,
+      "backlog": 0
+    },
+    {
+      "t": 98.72,
+      "produced": 987000,
+      "applied": 984377,
+      "backlog": 0
+    },
+    {
+      "t": 99.72,
+      "produced": 997000,
+      "applied": 994343,
+      "backlog": 0
+    },
+    {
+      "t": 100.72,
+      "produced": 1007000,
+      "applied": 1004357,
+      "backlog": 0
+    },
+    {
+      "t": 101.73,
+      "produced": 1017000,
+      "applied": 1014337,
+      "backlog": 737
+    },
+    {
+      "t": 102.74,
+      "produced": 1028000,
+      "applied": 1024204,
+      "backlog": 999
+    },
+    {
+      "t": 103.75,
+      "produced": 1038000,
+      "applied": 1034298,
+      "backlog": 125
+    },
+    {
+      "t": 104.75,
+      "produced": 1048000,
+      "applied": 1044293,
+      "backlog": 121
+    },
+    {
+      "t": 105.76,
+      "produced": 1058000,
+      "applied": 1054284,
+      "backlog": 0
+    },
+    {
+      "t": 106.76,
+      "produced": 1068000,
+      "applied": 1064494,
+      "backlog": 0
+    },
+    {
+      "t": 107.77,
+      "produced": 1078000,
+      "applied": 1074598,
+      "backlog": 0
+    },
+    {
+      "t": 108.78,
+      "produced": 1088000,
+      "applied": 1084706,
+      "backlog": 0
+    },
+    {
+      "t": 109.79,
+      "produced": 1098000,
+      "applied": 1094723,
+      "backlog": 0
+    },
+    {
+      "t": 110.79,
+      "produced": 1108000,
+      "applied": 1104699,
+      "backlog": 0
+    },
+    {
+      "t": 111.8,
+      "produced": 1118000,
+      "applied": 1114828,
+      "backlog": 0
+    },
+    {
+      "t": 112.81,
+      "produced": 1128000,
+      "applied": 1125069,
+      "backlog": 0
+    },
+    {
+      "t": 113.82,
+      "produced": 1138000,
+      "applied": 1135027,
+      "backlog": 0
+    },
+    {
+      "t": 114.83,
+      "produced": 1148000,
+      "applied": 1145193,
+      "backlog": 684
+    },
+    {
+      "t": 115.84,
+      "produced": 1159000,
+      "applied": 1155127,
+      "backlog": 878
+    },
+    {
+      "t": 116.85,
+      "produced": 1169000,
+      "applied": 1165117,
+      "backlog": 387
+    },
+    {
+      "t": 117.85,
+      "produced": 1179000,
+      "applied": 1175161,
+      "backlog": 0
+    },
+    {
+      "t": 118.86,
+      "produced": 1189000,
+      "applied": 1185228,
+      "backlog": 0
+    },
+    {
+      "t": 119.87,
+      "produced": 1199000,
+      "applied": 1195193,
+      "backlog": 0
+    }
+  ],
+  "date": "2026-11-23 02:54"
+}

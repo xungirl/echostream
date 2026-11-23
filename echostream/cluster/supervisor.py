@@ -27,12 +27,36 @@ import httpx
 import uvicorn
 from fastapi import FastAPI, HTTPException
 
-from echostream.serving.config import CLUSTER, RUN_DIR, ClusterConfig
+from echostream.serving.config import CLUSTER, ROOT, RUN_DIR, ClusterConfig
 
 PY = sys.executable
 REDIS = shutil.which("redis-server") or "/opt/homebrew/bin/redis-server"
 PG_BIN = Path(shutil.which("postgres") or "/opt/homebrew/bin/postgres").parent
 NGINX = shutil.which("nginx") or "/opt/homebrew/bin/nginx"
+
+
+GO_WORKER = ROOT / "go" / "worker" / "bin" / "echostream-worker"
+
+
+def worker_impl(i: int) -> str:
+    """ECHO_WORKER_IMPL = go (default, Stage 12) | python | mixed (even ids Python, odd ids Go:
+    both implementations share leases, streams and feature nodes in one cluster). The Go worker
+    has the identical algorithm and output (scripts/go_parity.py) at ~2x the end-to-end replay
+    throughput and ~1/6 of the worker CPU; Python stays as the reference implementation."""
+    impl = os.environ.get("ECHO_WORKER_IMPL", "") or "go"
+    if impl not in ("python", "go", "mixed"):
+        raise SystemExit(f"ECHO_WORKER_IMPL must be python, go or mixed, not {impl!r}")
+    return ("python", "go")[i % 2] if impl == "mixed" else impl
+
+
+def worker_cmd(i: int, cfg: ClusterConfig) -> list[str]:
+    args = ["--id", f"w{i}", "--metrics-port", str(cfg.worker_metrics_port(i))]
+    if worker_impl(i) == "go":
+        if not GO_WORKER.exists():
+            raise SystemExit(f"{GO_WORKER} not found: run `make go-build` (needs Go), "
+                             "or use the Python worker with ECHO_WORKER_IMPL=python")
+        return [str(GO_WORKER), *args]
+    return [PY, "-m", "echostream.serving.worker", *args]
 
 
 @dataclass
@@ -132,8 +156,7 @@ def build_specs(cfg: ClusterConfig, profile: str, run: Path, extra_env: dict[str
                 specs.append(ProcSpec(f"shard{s}-r{r}", cmd, "shards", env, port=cfg.shard_port(s, r)))
     if "workers" in want:
         for i in range(cfg.n_workers):
-            specs.append(ProcSpec(f"worker{i}", [PY, "-m", "echostream.serving.worker", "--id", f"w{i}",
-                                                 "--metrics-port", str(cfg.worker_metrics_port(i))], "workers", env))
+            specs.append(ProcSpec(f"worker{i}", worker_cmd(i, cfg), "workers", env))
     if "api" in want:
         for i in range(cfg.n_api):
             specs.append(ProcSpec(f"api{i}", [PY, "-m", "echostream.serving.api", "--port", str(cfg.api_port(i))],

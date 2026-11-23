@@ -5,14 +5,19 @@ Streams partitions -> workers -> sharded feature store.
   --rate R     paced at R events/s (e2e latency without a backlog)
   --rate 0     as fast as the system accepts (sustained throughput)
   --limit N    only the first N events (time order); default all 12,530,806
+  --worker-impl python|go, --workers N   which event worker runs, and how many (Stage 12)
 
 After the run every user's counters in the feature store are compared with the
 ground truth computed directly from the parquet file (exact match required).
+CPU seconds and RSS of every worker / API / Redis process are recorded too.
 
     uv run python scripts/stage5_replay.py --rate 0 --tag full
+    uv run python scripts/stage5_replay.py --rate 0 --worker-impl go --port-base 37000 \
+        --out results/stage12_go_worker_replay_go.json --runs-jsonl results/stage12_go_worker_runs.jsonl
 """
 import argparse
 import asyncio
+import json
 import platform
 import threading
 import time
@@ -22,7 +27,8 @@ import numpy as np
 import orjson
 import redis
 
-from echostream.cluster.client import cluster, fresh_run_dir
+from echostream.bench.procstats import ProcSampler
+from echostream.cluster.client import cluster, fresh_run_dir, status
 from echostream.core.hashing import ConsistentHashRing
 from echostream.domain.kuairec import KuaiRecAdapter
 from echostream.offline.evaluate import write_json
@@ -57,6 +63,15 @@ def hist_quantile(hist, q):
         return None
     idx = int(np.searchsorted(c, q * c[-1]))
     return LAT_BUCKETS_MS[idx]
+
+
+def hist_bucket(hist, q):
+    """[lower, upper] ms of the bucket holding quantile q (the true value lies inside)."""
+    c = np.cumsum(hist)
+    if c[-1] == 0:
+        return None
+    idx = int(np.searchsorted(c, q * c[-1]))
+    return [0 if idx == 0 else LAT_BUCKETS_MS[idx - 1], LAT_BUCKETS_MS[idx]]
 
 
 async def produce(base, users, items, wrs, tss, rate, state, r, n_partitions, concurrency=12):
@@ -102,6 +117,11 @@ def main():
     ap.add_argument("--rate", type=float, default=0)
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--tag", default="full")
+    ap.add_argument("--worker-impl", default="python", choices=["python", "go"])
+    ap.add_argument("--workers", type=int, default=0, help="number of workers (default: cluster config, 4)")
+    ap.add_argument("--port-base", type=int, default=17000)
+    ap.add_argument("--out", default="", help="output json (default results/stage5_replay_<tag>.json)")
+    ap.add_argument("--runs-jsonl", default="", help="also append the run (without timeline) to this file")
     args = ap.parse_args()
     a = KuaiRecAdapter()
     df = a.interactions()
@@ -112,9 +132,16 @@ def main():
     n = len(df)
     print(f"replaying {n:,} events, rate={args.rate or 'max'}", flush=True)
 
-    env = {"ECHO_PORT_BASE": "17000", "ECHO_DEDUPE_TTL": "3600"}
-    with cluster("full", env=env, run_dir=fresh_run_dir("replay")) as cfg:
+    env = {"ECHO_PORT_BASE": str(args.port_base), "ECHO_DEDUPE_TTL": "3600", "ECHO_WORKER_IMPL": args.worker_impl}
+    if args.workers:
+        env["ECHO_WORKERS"] = str(args.workers)
+    with cluster("full", env=env, run_dir=fresh_run_dir(f"replay-{args.tag}")) as cfg:
         r = redis.Redis(port=cfg.events_redis_port)
+        procs = ProcSampler()
+        for name, st in status(cfg).items():
+            if st["pid"] and st["group"] in ("workers", "api", "redis", "lb"):
+                procs.add(name, st["pid"])
+        procs.start()
         state = {"produced": 0, "backlog": 0, "failed_batches": 0}
         timeline = []
         stop = threading.Event()
@@ -142,6 +169,10 @@ def main():
         total_s = time.time() - t_start
         stop.set()
         th.join()
+        for name, st in status(cfg).items():     # a worker restarted by the supervisor has a new pid
+            if st["group"] == "workers" and st["pid"] and st["pid"] != procs.procs[name].pid:
+                procs.add(name, st["pid"])
+        proc_stats = procs.stop()
         applied, dup, hist = worker_totals(r, cfg.n_workers)
 
         # ---- correctness vs ground truth --------------------------------------
@@ -175,12 +206,29 @@ def main():
            "failed_batches": state["failed_batches"],
            "e2e_latency_ms_bucket_upper_bounds": {"p50": hist_quantile(hist, 0.5), "p95": hist_quantile(hist, 0.95),
                                                   "p99": hist_quantile(hist, 0.99)},
+           "e2e_latency_ms_bucket": {q: hist_bucket(hist, x) for q, x in (("p50", .5), ("p95", .95), ("p99", .99))},
+           "latency_buckets_ms": [b if b != float("inf") else "inf" for b in LAT_BUCKETS_MS],
+           "latency_histogram": [int(x) for x in hist],
+           "worker_impl": args.worker_impl, "n_workers": cfg.n_workers,
+           "processes": proc_stats,
+           "worker_cpu_s_total": round(sum(v["cpu_s"] for k, v in proc_stats.items() if k.startswith("worker")), 1),
+           "worker_rss_mb_max": max(v["rss_mb_max"] for k, v in proc_stats.items() if k.startswith("worker")),
+           "api_cpu_s_total": round(sum(v["cpu_s"] for k, v in proc_stats.items() if k.startswith("api")), 1),
            "max_backlog": max((x["backlog"] for x in timeline), default=0),
            "users_checked": a.n_users, "users_with_mismatched_counters": mismatched,
            "feature_node_memory": node_mem, "timeline": timeline,
            "date": time.strftime("%Y-%m-%d %H:%M")}
-    write_json(f"results/stage5_replay_{args.tag}.json", out)
-    print({k: v for k, v in out.items() if k != "timeline"}, flush=True)
+    write_json(args.out or f"results/stage5_replay_{args.tag}.json", out)
+    if args.runs_jsonl:
+        row = {k: v for k, v in out.items() if k not in ("timeline", "latency_histogram")}
+        row.update(harness="replay-api", impl=args.worker_impl, workers=cfg.n_workers, tag=args.tag,
+                   mode="max" if not args.rate else f"paced{int(args.rate)}",
+                   e2e_latency_ms=out["e2e_latency_ms_bucket_upper_bounds"],
+                   worker_cpu_s_per_1M_events=round(out["worker_cpu_s_total"] / n * 1e6, 2),
+                   duplicates=int(dup), correctness={"users_with_mismatched_counters": mismatched})
+        with open(args.runs_jsonl, "a") as f:
+            f.write(json.dumps(row) + "\n")
+    print({k: v for k, v in out.items() if k not in ("timeline", "latency_histogram", "processes")}, flush=True)
 
 
 if __name__ == "__main__":

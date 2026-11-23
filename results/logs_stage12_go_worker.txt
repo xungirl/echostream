@@ -1,0 +1,53 @@
+[00:13:14] profile run: results/stage12_go_worker_pprof_4w.pb.gz
+[00:13:14] matrix done
+[00:25:03] drain python x1 r0: 18,277 ev/s, 685.59 s, worker cpu 619.4 s, rss max 54.9 MB, mismatched 0, dup 0
+[00:25:03] waiting: another cluster is running (2 processes, e.g. 76339 /bin/zsh -c source /Users/xunxun/.claude/shell-snapshots/snapshot-zsh-1795)
+[00:27:03] waiting: another cluster is running (1 processes, e.g. 76408 /bin/zsh -c source /Users/xunxun/.claude/shell-snapshots/snapshot-zsh-1795)
+[00:29:03] waiting: another cluster is running (1 processes, e.g. 82890 tail -n 0 -F /Users/xunxun/echostream-go/results/logs_stage12_go_worker.tx)
+[00:34:07] drain go x1 r0: 72,241 ev/s, 173.46 s, worker cpu 96.3 s, rss max 33.1 MB, mismatched 0, dup 0
+[00:41:17] drain python x2 r0: 29,813 ev/s, 420.31 s, worker cpu 737.3 s, rss max 46.0 MB, mismatched 0, dup 0
+[00:43:35] drain go x2 r0: 97,574 ev/s, 128.42 s, worker cpu 125.0 s, rss max 29.1 MB, mismatched 0, dup 0
+[00:49:33] drain python x4 r0: 35,952 ev/s, 348.54 s, worker cpu 1155.8 s, rss max 53.0 MB, mismatched 0, dup 0
+[00:51:45] drain go x4 r0: 103,040 ev/s, 121.61 s, worker cpu 159.5 s, rss max 27.0 MB, mismatched 0, dup 0
+[00:57:28] drain python x8 r0: 37,552 ev/s, 333.69 s, worker cpu 1540.1 s, rss max 53.1 MB, mismatched 0, dup 0
+[00:59:51] drain go x8 r0: 94,708 ev/s, 132.31 s, worker cpu 163.2 s, rss max 26.0 MB, mismatched 0, dup 0
+[01:12:58] drain python x1 r1: 16,105 ev/s, 778.07 s, worker cpu 690.0 s, rss max 55.0 MB, mismatched 0, dup 0
+[01:16:45] drain go x1 r1: 58,636 ev/s, 213.7 s, worker cpu 114.0 s, rss max 33.0 MB, mismatched 0, dup 0
+[01:16:45] waiting: another cluster is running (1 processes, e.g. 8224 /bin/zsh -c source /Users/xunxun/.claude/shell-snapshots/snapshot-zsh-17954)
+[01:26:18] drain python x2 r1: 28,293 ev/s, 442.9 s, worker cpu 789.0 s, rss max 46.0 MB, mismatched 0, dup 0
+[01:28:38] drain go x2 r1: 95,985 ev/s, 130.55 s, worker cpu 127.1 s, rss max 29.8 MB, mismatched 0, dup 0
+[01:34:22] drain python x4 r1: 37,450 ev/s, 334.6 s, worker cpu 1150.7 s, rss max 42.7 MB, mismatched 0, dup 0
+[01:36:43] drain go x4 r1: 95,836 ev/s, 130.75 s, worker cpu 166.7 s, rss max 26.7 MB, mismatched 0, dup 0
+[01:41:00] drain python x8 r1: 50,490 ev/s, 248.18 s, worker cpu 1200.8 s, rss max 42.0 MB, mismatched 0, dup 184
+[01:42:33] drain go x8 r1: 149,539 ev/s, 83.8 s, worker cpu 137.1 s, rss max 27.1 MB, mismatched 0, dup 0
+[01:54:07] drain python x1 r2: 18,295 ev/s, 684.93 s, worker cpu 619.5 s, rss max 55.0 MB, mismatched 0, dup 0
+[01:57:01] drain go x1 r2: 76,054 ev/s, 164.76 s, worker cpu 91.9 s, rss max 34.9 MB, mismatched 0, dup 0
+[02:03:07] drain python x2 r2: 35,061 ev/s, 357.4 s, worker cpu 638.6 s, rss max 46.6 MB, mismatched 0, dup 0
+[02:04:59] drain go x2 r2: 122,290 ev/s, 102.47 s, worker cpu 105.5 s, rss max 29.3 MB, mismatched 0, dup 0
+[02:09:05] drain python x4 r2: 52,752 ev/s, 237.54 s, worker cpu 814.6 s, rss max 43.0 MB, mismatched 0, dup 0
+[02:10:35] drain go x4 r2: 155,325 ev/s, 80.67 s, worker cpu 126.2 s, rss max 28.5 MB, mismatched 0, dup 0
+[02:13:56] drain python x8 r2: 65,208 ev/s, 192.17 s, worker cpu 1026.4 s, rss max 42.5 MB, mismatched 0, dup 0
+[02:15:26] drain go x8 r2: 156,298 ev/s, 80.17 s, worker cpu 133.6 s, rss max 27.3 MB, mismatched 0, dup 0
+[02:16:57] chaos go x4 r0: killed w1 with 1000 pending; applied 11725806, dup 500, claimed 2000, mismatched 0
+[02:21:05] chaos python x4 r0: killed w1 with 1000 pending; applied 12258806, dup 0, claimed 1000, mismatched 0
+[02:22:37] chaos go x4 r1: killed w3 with 1000 pending; applied 11751832, dup 474, claimed 500, mismatched 0
+[02:24:08] chaos go x4 r2: killed w2 with 1000 pending; applied 11731306, dup 0, claimed 2000, mismatched 0
+[02:29:20] replay(API) python x4 r0: 42,276 ev/s e2e, p50/p99 <= 15000/20000 ms, mismatched 0, dup 0
+[02:32:05] replay(API) go x4 r0: 85,306 ev/s e2e, p50/p99 <= 4000/15000 ms, mismatched 0, dup 0
+[02:37:16] replay(API) python x4 r1: 42,295 ev/s e2e, p50/p99 <= 15000/20000 ms, mismatched 0, dup 0
+[02:39:57] replay(API) go x4 r1: 85,370 ev/s e2e, p50/p99 <= 5000/10000 ms, mismatched 0, dup 0
+[02:45:12] replay(API) python x4 r2: 41,670 ev/s e2e, p50/p99 <= 15000/30000 ms, mismatched 0, dup 0
+[02:48:01] replay(API) go x4 r2: 83,231 ev/s e2e, p50/p99 <= 5000/15000 ms, mismatched 0, dup 0
+[02:50:15] paced 10000/s python r0: p50 in [30, 40] ms, p99 in [40, 50] ms, worker cpu 75.1 s
+[02:52:32] paced 10000/s go r0: p50 in [20, 30] ms, p99 in [30, 40] ms, worker cpu 18.8 s
+[02:54:46] paced 10000/s python r1: p50 in [30, 40] ms, p99 in [40, 50] ms, worker cpu 75.3 s
+[02:57:00] paced 10000/s go r1: p50 in [20, 30] ms, p99 in [30, 40] ms, worker cpu 19.0 s
+[02:59:13] paced 10000/s python r2: p50 in [30, 40] ms, p99 in [40, 50] ms, worker cpu 75.0 s
+[03:01:26] paced 10000/s go r2: p50 in [20, 30] ms, p99 in [40, 50] ms, worker cpu 18.9 s
+[03:03:20] paced 25000/s python r0: p50 in [20, 30] ms, p99 in [40, 50] ms, worker cpu 149.8 s
+[03:05:14] paced 25000/s go r0: p50 in [15, 20] ms, p99 in [30, 40] ms, worker cpu 35.3 s
+[03:07:08] paced 25000/s python r1: p50 in [20, 30] ms, p99 in [40, 50] ms, worker cpu 149.5 s
+[03:09:06] paced 25000/s go r1: p50 in [15, 20] ms, p99 in [20, 30] ms, worker cpu 34.8 s
+[03:11:00] paced 25000/s python r2: p50 in [20, 30] ms, p99 in [50, 75] ms, worker cpu 151.0 s
+[03:12:54] paced 25000/s go r2: p50 in [15, 20] ms, p99 in [30, 40] ms, worker cpu 34.5 s
+[03:12:54] matrix done

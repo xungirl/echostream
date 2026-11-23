@@ -77,3 +77,10 @@ missing) and continue with "Next". Artifacts (models, indexes, per-user metric a
 - Brand assets in `docs/brand/` (from the user; do not edit). README starts with the bilingual lockup.
 - README (journey 0–10, key metrics, architecture, trade-offs, limitations), BENCHMARK.md, INTERVIEW.md, DRILLS.md final.
 - Left to the user: `make agent-real` (DashScope key, ¥2 cap). Nothing pushed; no remote.
+
+## Stage 12 — Go event worker (done, branch go-worker)
+- `go/worker/` drop-in port; golden tests from Python; parity identical (`results/stage12_go_parity.json`); default is now Go.
+- Benchmarks (`results/stage12_go_worker.json`, raw `..._runs.jsonl`): Stage 5 replay 85,306 vs 42,276 events/s, worker CPU
+  12.6 vs 74.3 s per 1M events; drain 1 worker 72,241 vs 18,277 events/s; multi-worker drains vary up to ~60 % (Redis on slower
+  cores in one time window) → ranges. Chaos kill -9 ×3: exact. Two Python poison-pill crashes fixed on the way.
+- To redo the numbers: `make bench-go` on a quiet machine (~3 h).

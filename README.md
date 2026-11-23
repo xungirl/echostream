@@ -72,6 +72,7 @@ It runs on **KuaiRec**, a real short-video interaction dataset released by Kuais
 | Agent | A tool-using agent that investigates gate failures and writes incident reports | 门禁触发时自动排查原因、写事故报告的 agent |
 | Experiments | Simulated online A/B on the fully-observed matrix | 在全观测矩阵上做模拟线上 A/B |
 | Demo | Web feed with live per-stage latency waterfall | 网页推荐流 demo，实时显示每个阶段的耗时 |
+| Go worker | Drop-in Go rewrite of the stream consumer: same leases / XAUTOCLAIM / dedupe / DLQ, identical output (parity test), 2× end-to-end throughput, ~1/6 of the CPU | 用 Go 重写的事件消费者：租约、接管、去重、死信完全一致（对拍测试），端到端吞吐 2 倍、CPU 约 1/6 |
 
 ---
 
@@ -102,6 +103,7 @@ It runs on **KuaiRec**, a real short-video interaction dataset released by Kuais
 - [x] Stage 8 · Postgres, caching, shadow / canary / rollback · Postgres、缓存、影子 / 灰度 / 回滚
 - [x] Stage 9 · Release-guard agent · 发布守门 agent
 - [x] Stage 10 · Web demo · 网页 demo
+- [x] Stage 12 · Event worker rewritten in Go, parity-tested, now the default · 用 Go 重写事件 worker（逐字节对齐，已设为默认）
 - [ ] Next · E-commerce domain adapter (Amazon Reviews 2023) · 电商领域适配器
 
 ---
@@ -271,6 +273,56 @@ Each stage: goal → decision & alternatives → built → verified → measured
   `feature_store_unavailable` (the skipped video reappears because the real-time history is unreachable — degradation, visible).
 - 中文：网页 demo：点「划走」后下一屏变化、每阶段/每分片耗时瀑布图、集群面板可一键注入故障；截图在 docs/screenshots/。
 
+### Stage 12 — Event worker in Go
+- **Goal:** the event worker is the hot loop of the real-time path (every swipe passes through it). Rewrite it in Go as a
+  drop-in replacement, prove it behaves identically, and measure honestly what Go buys.
+- **Decisions & alternatives:** rewrite **only the worker**: it is a small, self-contained, CPU-heavy loop with a narrow
+  contract (Redis keys, Lua script, stream names, metrics), while the API is dominated by LightGBM/numpy (already native)
+  and the offline code needs the Python ML stack. Keep the algorithm **line for line** (same leases, same pending-first
+  reads, same claim gate) so the comparison isolates the language/runtime; a goroutine-per-partition redesign would have
+  mixed design and language effects. go-redis v9 (RESP2, like redis-py), pgx for the archive. Python stays as the
+  reference implementation; `ECHO_WORKER_IMPL=python|go|mixed` switches per cluster (mixed = both share one cluster).
+- **Built:** `go/worker/` (cmd + internal packages: hashing, pycompat, config, events, featurestore, worker, archive,
+  metrics), `/metrics` with the same names plus `/debug/pprof`; `scripts/gen_go_golden.py` (Python writes the expected
+  values, Go tests must match); `scripts/go_parity.py`; `scripts/stage12_go_bench.py` (drain harness, chaos, matrix);
+  `stage5_replay.py --worker-impl`.
+- **Verified:** golden tests — the feature node for 11,005 user ids × 6 ring sizes, partitions, `stable_hash`, and
+  Python's `int()`/`float()`/`repr()` on ~2,000 fuzzed strings and ~3,000 floats match **100 %**; `go test -race -count=3`
+  with real redis-server processes (duplicates + poison, ghost-consumer takeover, crash takeover, frozen feature node);
+  the 5 event-pipeline integration tests pass on Python, Go and mixed clusters; **parity** (`results/stage12_go_parity.json`):
+  the same events incl. duplicates, out-of-order re-sends, 16 kinds of poison, NaN/inf partial writes, a ghost consumer
+  and a `kill -9` mid-batch, each implementation on fresh Redis + Postgres → **14,802 feature keys, 28 DLQ entries,
+  counters and 14,198 archive rows identical**.
+- **Measured** (*real-replay*, all 12,530,806 events, 3 repeats, `results/stage12_go_worker.json`):
+  - Stage 5 harness (API → streams → 4 workers): **85,306 vs 42,276 events/s** (Go vs Python, medians; ranges
+    83,231–85,370 vs 41,670–42,295) — 2.0× end to end; worker CPU **12.6 vs 74.3 s per 1M events** (5.9× less).
+  - worker-only drain: 1 worker **72,241 vs 18,277 events/s** (3.6–4.2× within each repeat); 4 workers 96k–155k vs
+    36k–53k (2.6–2.9×); 8 workers 95k–156k vs 38k–65k. Multi-worker absolute numbers vary up to ~60 % between repeats
+    (see *Problems*), so they are reported as ranges.
+  - event → feature latency at 10k events/s: p50 20–30 ms / p99 30–40 ms (Go) vs 30–40 / 40–50 ms (Python) — at a load
+    both can carry, latency is dominated by batching and polling, so Go is only one bucket better.
+  - memory: worker RSS 25–35 MB (Go) vs 40–55 MB (Python) — modest, not dramatic.
+  - chaos: `kill -9` of the worker holding 1,000 un-acked entries mid-drain, ×3 → pending entries taken over with
+    XAUTOCLAIM after the lease TTL, **0 / 7,176 users mismatched every time**, throughput 152k events/s in all three runs.
+  - pprof: a Go worker is on-CPU only ~33 % of a core, mostly in syscalls and goroutine wake-ups; the single-threaded
+    event-bus Redis is 77 % busy. Go turned a CPU-bound worker into a round-trip/Redis-bound one; the next limit is the
+    event bus, not the language.
+- **Problems → fixes:** writing the spec for the port found **two poison-pill crashes in the Python worker** (invalid
+  UTF-8 → `UnicodeDecodeError` escaped `handle()` and killed the worker on every redelivery, stalling the partition
+  forever; `produced_ms = nan` → `StopIteration` inside the coroutine) — both fixed, with tests, before porting. Go's `%g`
+  prints `12.0` as `12` and timestamps in exponent form, which would have changed every history entry → a `repr()`-exact
+  formatter. go-redis' `XReadGroup` returns fields as a map and loses their order (the DLQ copy keeps it) → raw
+  `XREADGROUP` parsing. Go's Unicode tables are newer than CPython 3.12's, so ~thousands of characters were quoted
+  differently in DLQ reasons → CPython's own tables generated into Go. Run-to-run variance: in the slow repeats Redis
+  needed ~50 % more CPU time for identical work (cores slowed or efficiency cores; both languages hit in the same time
+  window), so ratios are computed within a repeat. `claimed` / duplicate counts in chaos runs differ between runs
+  (start-up rebalancing and where SIGKILL lands relative to XACK) — final state was exact every time (BENCHMARK.md, Stage 12).
+- **Default:** Go (see *Go event worker* below).
+- 中文：只把事件 worker 用 Go 重写（算法逐行一致，便于公平对比）。Python 生成黄金数据，Go 的一致性哈希、分区、数字解析/格式化 100% 对上；
+  同一批事件（重复、乱序重发、16 种毒消息、kill -9）分别跑两种 worker，特征库 14,802 个 key、死信、计数、归档全部一致。
+  全量 1,253 万事件：端到端 8.5 万 vs 4.2 万条/秒（2 倍），worker CPU 约 1/6；单 worker 7.2 万 vs 1.8 万条/秒。
+  Go 版不再受 CPU 限制，而是等 Redis 往返；下一个瓶颈是单线程的事件总线 Redis。顺便修了 Python 版两个会让 worker 反复崩溃的毒消息 bug。
+
 ## Key metrics · 关键指标
 
 | metric | value | kind | how measured | source file |
@@ -296,6 +348,13 @@ Each stage: goal → decision & alternatives → built → verified → measured
 | stampede: 200 concurrent misses | 1 computation | systems | single-flight + lock | `results/stage8_rollout.json` |
 | regression gate (5 regressions, 3 harmless) | recall 0.8, precision 0.8 | quality | paired bootstrap + seed noise | `results/stage9_release_guard.json` |
 | agent root cause (fake provider) | 2 / 4 correct | quality | tool traces in incidents/ | `results/stage9_release_guard.json` |
+| Go vs Python worker, Stage 5 replay harness (12,530,806 events, 4 workers) | 85,306 vs 42,276 events/s (median of 3; ranges 83,231–85,370 / 41,670–42,295) | real-replay | API → streams → workers, exact correctness check | `results/stage12_go_worker.json` |
+| worker CPU per 1M events, same harness | 12.6 vs 74.3 s (Go vs Python) | real-replay | psutil, all worker processes | `results/stage12_go_worker.json` |
+| worker-only drain, 1 worker | 72,241 vs 18,277 events/s (3.6–4.2× in each repeat) | real-replay | pre-filled streams, time to empty | `results/stage12_go_worker.json` |
+| worker-only drain, 4 / 8 workers | Go 96k–155k / 95k–156k vs Python 36k–53k / 38k–65k events/s | real-replay (high variance, ranges) | 3 repeats each | `results/stage12_go_worker.json` |
+| event → feature latency at 10k events/s, Go / Python | p50 20–30 / 30–40 ms, p99 30–40 / 40–50 ms | real-replay | 40-bucket histogram, 3 repeats | `results/stage12_go_worker.json` |
+| Go worker, kill -9 mid-drain (×3) | 0 / 7,176 users mismatched | real-replay | XAUTOCLAIM takeover | `results/stage12_go_worker_runs.jsonl` |
+| Python vs Go parity | 14,802 keys, 28 DLQ entries, 14,198 archive rows identical | systems (correctness) | same events, fresh Redis/Postgres each | `results/stage12_go_parity.json` |
 
 ## Next steps · 下一步
 
@@ -303,6 +362,9 @@ Each stage: goal → decision & alternatives → built → verified → measured
 - Re-tune recall quotas per phase (or widen the candidate set) — the val-selected mix underperforms the two-tower alone on test.
 - A real ANN index (HNSW/IVF) inside the shards once the catalog is ≥ 10⁶ items; a gRPC/binary scatter-gather client.
 - Docker-compose packaging for multi-machine runs (the supervisor is single-host by design).
+- Event path after Stage 12: the single-threaded event-bus Redis is the next limit (≈ 5 µs of its CPU per event) → more
+  bus shards, or Redis Cluster; a fencing token in the Lua script would close the "zombie owner" window; a short
+  join delay before taking leases would avoid the start-up rebalancing churn.
 
 ## Architecture (as built) · 架构
 
@@ -323,7 +385,8 @@ Each stage: goal → decision & alternatives → built → verified → measured
         │                     │  └──────────────┬───────────────────┘  │  consumer group "workers", DLQ       │
         │ POST /events ───────┼─────────────────┘ XADD ───────────────▶│        │ leases, XAUTOCLAIM          │
         │                     │                                         │        ▼                             │
-        │                     │   workers ×4: Lua(dedupe + history + counters) on the user's feature node,   │
+        │                     │   workers ×4 (Go; Python = reference): Lua(dedupe + history + counters) on   │
+        │                     │   the user's feature node,                                                   │
         │                     │   then (Stage 8) batch-archive to Postgres, then XACK + XDEL                 │
         │                     │                                                                              │
         │                     │   Postgres (Stage 8): users, videos, model registry, rollout state, archive  │
@@ -333,6 +396,32 @@ Each stage: goal → decision & alternatives → built → verified → measured
 ```
 
 Everything above is a separate OS process on **one laptop** (ports 17000–17140). "Node" = process, not machine.
+
+## Go event worker · Go 事件 worker
+
+**English**
+`go/worker/` is a drop-in replacement for `python -m echostream.serving.worker`: same flags, same `ECHO_*` env vars, same
+Redis keys and Lua script, same DLQ reasons, same Prometheus metric names. Both can even run in one cluster
+(`ECHO_WORKER_IMPL=mixed`).
+
+```bash
+make go-build                          # -> go/worker/bin/echostream-worker
+make go-test                           # go vet + go test -race -count=3 (starts its own redis-server)
+make parity                            # same events through both workers, diff everything
+make cluster-up                        # Go workers (default); ECHO_WORKER_IMPL=python for the Python ones
+make bench-go                          # Stage 12 benchmark matrix (~3 h on a quiet machine)
+```
+
+**Default: Go.** Parity is exact (feature store, DLQ, counters, archive), the Stage 5 replay harness runs at 2.0× the
+throughput (85.3k vs 42.3k events/s, tight ranges), the worker needs ~1/6 of the CPU, and every existing reliability test
+passes against it. Python stays in the repo as the readable reference and the fallback: without a Go toolchain, `make`
+and the integration tests use it automatically, and `ECHO_WORKER_IMPL=python` selects it explicitly. Known differences
+(both deliberate, documented in the code): user ids ≥ 2⁶³ are dead-lettered by Go (Python has big ints), and Go stops its
+loops before releasing leases on SIGTERM (Python releases first; final state is the same).
+
+**中文**
+`go/worker/` 可以直接替换 Python 版 worker：命令行参数、环境变量、Redis key、Lua 脚本、死信原因、监控指标名都一样，两种 worker 还能混跑在同一个集群里。
+**默认用 Go**：对拍完全一致，端到端吞吐 2 倍，CPU 约 1/6，原有可靠性测试全部通过。Python 版保留作为参照实现；没装 Go 时自动退回 Python 版。
 
 ## Design decisions & trade-offs · 设计取舍
 
@@ -348,6 +437,7 @@ Everything above is a separate OS process on **one laptop** (ports 17000–17140
 | Feature nodes without persistence; Postgres archive + rebuild | Redis holds derived data only; one source of truth | rebuild takes time proportional to the archive |
 | Process supervisor instead of docker compose | ms-level kill/freeze from tests; no VM network in latency numbers | not a production orchestrator; single machine |
 | One feature builder for offline training and online serving | removes a whole class of train/serve skew | features must be cheap enough for the request path |
+| Rewrite only the event worker in Go, same algorithm | hot, small, CPU-bound loop with a narrow contract; a 1:1 port isolates the language effect | two implementations to keep in sync → golden + parity tests in CI |
 
 ## How to run · 运行
 
@@ -360,6 +450,8 @@ make cluster-up              # multi-node-on-localhost cluster on :17000 ; make 
 curl '127.0.0.1:17000/recommend?user_id=42&n=10'
 make demo                    # cluster in demo mode + web UI on http://127.0.0.1:5173 ; make demo-down
 make load chaos replay synthetic   # Stage-5 benchmarks (each starts its own cluster)
+make go-build go-test parity       # Stage 12: Go worker (default), its race tests, Python-vs-Go parity
+make bench-go                      # Stage 12 benchmark matrix: Python vs Go (~3 h)
 make stage6 stage7 stage8 release-guard
 make agent                   # release-guard agent, deterministic fake provider
 DASHSCOPE_API_KEY=... make agent-real   # real LLM (qwen3.8-flash), hard cap ¥2 via a token cost ledger
@@ -380,6 +472,9 @@ uv run python scripts/make_drill.py --list   # rewrite-the-core-function drills 
 - **Simulator ≠ users.** Stage 7/8 "online" metrics replay true small-matrix watch ratios; real users are stochastic and
   react to the feed itself.
 - **No video files** in KuaiRec, so the demo shows cards, not playback.
+- **Two worker implementations.** Kept identical by golden + parity tests, but every change to the event path now has to
+  be made twice. Multi-worker drain throughput varied up to ~60 % between repeats on this laptop (Redis on slower cores),
+  so those numbers are ranges; the end-to-end replay numbers are tight.
 
 ## Docs · 文档
 

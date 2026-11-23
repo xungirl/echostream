@@ -34,12 +34,22 @@ from redis.exceptions import ResponseError
 from redis.exceptions import TimeoutError as RedisTimeoutError
 
 from echostream.serving.config import CLUSTER, EVENTS
-from echostream.serving.events import PoisonEvent, parse_fields, stream_name
+from echostream.serving.events import PoisonEvent, as_text, parse_fields, stream_name
 from echostream.serving.feature_store import FeatureStore
 
 RENEW_LUA = "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('PEXPIRE', KEYS[1], ARGV[2]) else return 0 end"
 RELEASE_LUA = "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end"
-LAT_BUCKETS_MS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 30000, 60000, math.inf]
+# event -> feature latency buckets (ms). Fine-grained (<= 1.5x apart) so p50/p99 can be read off
+# the histogram; the Go worker uses the same list (go/worker/internal/metrics, golden-tested).
+LAT_BUCKETS_MS = [0.5, 1, 1.5, 2, 3, 4, 5, 7.5, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200, 300, 400, 500, 750,
+                  1000, 1500, 2000, 3000, 4000, 5000, 7500, 10000, 15000, 20000, 30000, 45000, 60000, 90000,
+                  120000, 180000, 300000, math.inf]
+
+
+def lat_bucket(lat_ms: float) -> int:
+    """Index of the first bucket >= lat_ms. NaN (corrupt produced_ms) -> last bucket; a bare
+    next() raised StopIteration there, which crashed the worker mid-batch."""
+    return next((i for i, b in enumerate(LAT_BUCKETS_MS) if lat_ms <= b), len(LAT_BUCKETS_MS) - 1)
 
 APPLIED = Counter("echostream_worker_events_applied_total", "events applied to the feature store")
 DUPLICATES = Counter("echostream_worker_events_duplicate_total", "redeliveries skipped by dedupe")
@@ -217,7 +227,7 @@ class Worker:
                     self.stats["applied"] += 1
                     lat = now_ms - ev["produced_ms"]
                     E2E.observe(lat / 1000)
-                    self.lat_hist[next(i for i, b in enumerate(LAT_BUCKETS_MS) if lat <= b)] += 1
+                    self.lat_hist[lat_bucket(lat)] += 1
                 else:
                     DUPLICATES.inc()
                     self.stats["duplicates"] += 1
@@ -253,8 +263,7 @@ class Worker:
             return False
 
     async def dead_letter(self, stream: str, entry_id, fields: dict, reason: str) -> None:
-        clean = {(k.decode() if isinstance(k, bytes) else k): (v.decode() if isinstance(v, bytes) else v)
-                 for k, v in fields.items()}
+        clean = {as_text(k): as_text(v) for k, v in fields.items()}   # undecodable bytes are kept as they are
         eid = entry_id.decode() if isinstance(entry_id, bytes) else entry_id
         await self.r.xadd(EVENTS.dlq_stream, {**clean, "_source": stream, "_entry": eid, "_reason": reason[:200],
                                               "_worker": self.id})

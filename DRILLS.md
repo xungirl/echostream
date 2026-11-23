@@ -32,6 +32,20 @@ git checkout main                                  # 回主线（你的答案留
 | 13 | `gate` | `core/gate.py::check_metric` | 配对 bootstrap 求 (候选 − 基线) 的 CI；阈值 = max(CI 半宽, 种子噪声)；只有 Δ < −阈值且 CI 上界 < 0 才算退化 | `tests/unit/test_gate.py` | 中 | 先调 `paired_bootstrap_diff`，再调 `noise_threshold` |
 | 14 | `logq_loss` | `core/losses.py::in_batch_softmax_loss` | 批内 softmax：logits = U·Vᵀ/τ；可选减去 logQ；同一物品在批里出现两次时不能当彼此的负样本（mask 成 −inf）；可选拼接随机负样本（撞到正样本的也 mask） | `tests/unit/test_losses.py`（手算 + logQ 例子） | 难 | label 就是 `arange(B)`；`masked_fill(same_item & ~eye, -inf)` |
 
+### Go 练习（Stage 12）
+
+同一个脚本，名字以 `go_` 开头：函数体换成 `panic("drill: ...")`（注释保留），测试对照的是 **Python 算出来的黄金数据**（`go/worker/testdata/`）。
+
+```bash
+uv run python scripts/make_drill.py go_hash_ring     # 建分支 drill/go_hash_ring 并挖空 Ring.GetNode
+cd go/worker && go test ./internal/hashing/          # 红 -> 写 -> 绿（11,005 个用户 × 6 种节点数必须和 Python 一致）
+```
+
+| # | 练习名 | 函数 | 必须做到什么 | 检查它的测试 | 难度 | 提示 |
+|---|---|---|---|---|---|---|
+| G1 | `go_hash_ring` | `go/worker/internal/hashing/hashing.go::Ring.GetNode` | 在按 (hash, 节点名) 排好序的 `r.points` 上找第一个 hash **严格大于** `StableHash(key)` 的点，越界绕回 0；空环 panic | `go test ./internal/hashing/`（黄金数据 + 「加一个节点只搬约 1/4」） | 中 | `sort.Search(len(r.points), func(i int) bool { ... })`，结果 `% len(r.points)`；对应 Python 的 `bisect_right(ring, (h, "\uffff"))` |
+| G2 | `go_float_repr` | `go/worker/internal/pycompat/pycompat.go::FormatFloat` | 输出和 Python `repr(float)` 一字不差：nan/inf/-inf；最短往返数字；十进制指数在 [-4, 16) 用定点（整数补 `.0`），否则 `1.5e+16` / `1e-05`（指数至少两位） | `go test ./internal/pycompat/ -run FormatFloat`（~3,000 个随机浮点数） | 中 | 先 `strconv.FormatFloat(f, 'e', -1, 64)` 拿到「数字串 + 指数」，再按规则重新摆小数点 |
+
 ## 写完之后
 
 - 单测全绿后跑一次 `make ci`：集成测试（分片合并、事件管道等）会间接用到这些函数。
