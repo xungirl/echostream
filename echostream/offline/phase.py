@@ -44,10 +44,15 @@ def window(df: pd.DataFrame, start: int, end: int) -> pd.DataFrame:
     return df[(df.date >= start) & (df.date <= end)]
 
 
+def target_range_of(adapter: DomainAdapter, name: str) -> tuple[int, int]:
+    spec = adapter.split_spec()
+    return {"val": spec.val, "test": spec.test, "rank": spec.rank}[name]
+
+
 def build_phase(adapter: DomainAdapter, name: str) -> Phase:
     df = adapter.interactions()
     spec = adapter.split_spec()
-    target_range = spec.val if name == "val" else spec.test
+    target_range = target_range_of(adapter, name)
     hist = df[(df.date >= spec.train[0]) & (df.date < target_range[0])]
     target = window(df, *target_range)
 
@@ -94,7 +99,7 @@ def history_frame(adapter: DomainAdapter, phase_name: str, positives_only: bool 
     the val phase only."""
     df = adapter.interactions()
     spec = adapter.split_spec()
-    start = spec.val[0] if phase_name == "val" else spec.test[0]
+    start = target_range_of(adapter, phase_name)[0]
     hist = df[(df.date >= spec.train[0]) & (df.date < start)]
     if positives_only:
         hist = hist[adapter.is_positive(hist.value.values)]

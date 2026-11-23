@@ -80,3 +80,32 @@ def test_paired_diff():
     a = np.array([0.1, 0.2, 0.3, 0.4])
     d, lo, hi = paired_bootstrap_diff(a, a + 0.1)
     assert d == pytest.approx(0.1) and lo == pytest.approx(0.1) and hi == pytest.approx(0.1)
+
+
+def test_auc_hand_computed():
+    from echostream.core.metrics import auc
+    # pos scores {0.9, 0.4}, neg {0.5, 0.1}: pairs (0.9>0.5)(0.9>0.1)(0.4<0.5)(0.4>0.1) -> 3/4
+    assert auc(np.array([1, 0, 1, 0]), np.array([0.9, 0.5, 0.4, 0.1])) == pytest.approx(0.75)
+    assert auc(np.array([1, 0]), np.array([0.5, 0.5])) == pytest.approx(0.5)  # tie
+    assert np.isnan(auc(np.array([1, 1]), np.array([0.1, 0.2])))
+
+
+def test_gauc_weights_users_and_skips_single_class():
+    from echostream.core.metrics import gauc
+    users = np.array([1, 1, 1, 1, 2, 2, 3, 3])
+    labels = np.array([1, 0, 1, 0, 1, 0, 1, 1])
+    scores = np.array([0.9, 0.5, 0.4, 0.1, 0.2, 0.8, 0.3, 0.3])
+    # user1 auc .75 (4 rows), user2 auc 0 (2 rows), user3 skipped -> (.75*4 + 0*2)/6
+    assert gauc(users, labels, scores) == pytest.approx(0.5)
+    # global AUC can differ from GAUC
+    from echostream.core.metrics import auc
+    assert auc(labels[:6], scores[:6]) != pytest.approx(0.5)
+
+
+def test_auc_matches_sklearn():
+    from sklearn.metrics import roc_auc_score
+    from echostream.core.metrics import auc
+    rng = np.random.default_rng(0)
+    y = rng.integers(0, 2, 300)
+    s = np.round(rng.random(300), 2)
+    assert auc(y, s) == pytest.approx(roc_auc_score(y, s))

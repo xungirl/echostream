@@ -20,6 +20,9 @@ class SplitSpec:
     train: tuple[int, int]
     val: tuple[int, int]
     test: tuple[int, int]
+    # Ranker-training window: the last days before test. Recall models are refit on
+    # everything before it, so the ranker sees recall scores distributed like at test time.
+    rank: tuple[int, int] | None = None
 
 
 class DomainAdapter(ABC):

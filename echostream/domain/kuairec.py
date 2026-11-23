@@ -63,7 +63,8 @@ class KuaiRecAdapter(DomainAdapter):
 
     def split_spec(self) -> SplitSpec:
         # The big matrix covers three date windows: Jul 5-12, Aug 1-10, Aug 27-Sep 5.
-        return SplitSpec(train=(20200705, 20200810), val=(20200827, 20200831), test=(20200901, 20200905))
+        return SplitSpec(train=(20200705, 20200810), val=(20200827, 20200831), test=(20200901, 20200905),
+                         rank=(20200830, 20200831))
 
     # ---- side information -------------------------------------------------
     @cached_property

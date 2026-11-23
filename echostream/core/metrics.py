@@ -124,3 +124,43 @@ def paired_bootstrap_diff(
     a, b = np.asarray(a, dtype=np.float64), np.asarray(b, dtype=np.float64)
     assert a.shape == b.shape
     return bootstrap_ci(b - a, n_boot=n_boot, alpha=alpha, seed=seed)
+
+
+def auc(labels: np.ndarray, scores: np.ndarray) -> float:
+    """Probability a random positive is scored above a random negative (ties = 1/2).
+    Rank-sum (Mann-Whitney) formula; NaN if only one class is present."""
+    labels = np.asarray(labels).astype(bool)
+    scores = np.asarray(scores, dtype=np.float64)
+    n_pos, n_neg = labels.sum(), (~labels).sum()
+    if n_pos == 0 or n_neg == 0:
+        return float("nan")
+    order = np.argsort(scores, kind="mergesort")
+    ranks = np.empty(len(scores))
+    sorted_scores = scores[order]
+    # average ranks for ties
+    i = 0
+    while i < len(scores):
+        j = i
+        while j + 1 < len(scores) and sorted_scores[j + 1] == sorted_scores[i]:
+            j += 1
+        ranks[order[i:j + 1]] = (i + j) / 2.0 + 1.0
+        i = j + 1
+    return float((ranks[labels].sum() - n_pos * (n_pos + 1) / 2.0) / (n_pos * n_neg))
+
+
+def gauc(user_ids: np.ndarray, labels: np.ndarray, scores: np.ndarray) -> float:
+    """Group AUC: per-user AUC averaged with weights = #impressions of that user.
+    Users whose candidates are all positive or all negative are skipped. This
+    asks "does the model order items correctly *within* each user's list", which
+    is what a ranker is for; global AUC also rewards separating users."""
+    user_ids, labels, scores = np.asarray(user_ids), np.asarray(labels), np.asarray(scores)
+    order = np.argsort(user_ids, kind="stable")
+    u, lab, sc = user_ids[order], labels[order], scores[order]
+    bounds = np.flatnonzero(np.diff(u)) + 1
+    total, weight = 0.0, 0
+    for lo, hi in zip(np.r_[0, bounds], np.r_[bounds, len(u)]):
+        a = auc(lab[lo:hi], sc[lo:hi])
+        if not np.isnan(a):
+            total += a * (hi - lo)
+            weight += hi - lo
+    return total / weight if weight else float("nan")
