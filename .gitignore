@@ -17,3 +17,9 @@ web/test-results/
 .DS_Store
 *.log
 *.egg-info/
+
+# Go worker build output; symlinks to the main checkout's data (worktrees)
+go/worker/bin/
+/data
+/artifacts
+/.cache
