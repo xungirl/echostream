@@ -45,3 +45,7 @@ missing) and continue with "Next". Artifacts (models, indexes, per-user metric a
   stage9_release_guard.py). PREREG.md is committed before Stage 7 runs.
 - Web demo (Stage 10) is being built in `web/` (not yet committed at the mvp tag).
 - How to resume: `make data && make train-all` (if artifacts/ missing), then the next stage script; `make ci` must stay green.
+
+## Stage 6 — MMR (done)
+- `results/stage6_mmr.json`: λ=0.7 selected by the pre-written rule (NDCG@10 0.1099 vs 0.1100, Δ CI contains 0;
+  category diversity@10 0.746 → 0.896; coverage@10 0.0355 → 0.0390). Serving: `ECHO_MMR_LAMBDA=0.7` or `?mmr_lambda=`.
