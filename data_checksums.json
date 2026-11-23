@@ -1,0 +1,10 @@
+{
+  "KuaiRec.zip": "c23f211cf109c7a060a25a4afe9e8c681b1ccbbc816cca921d87ad37dd11c70c",
+  "big_matrix.csv": "4ee1a72ff9ce4e86ef50525da9dfd7aefcefa717b37c9d570010f689c42f4ef9",
+  "item_categories.csv": "b8b8330387cd69659ff6b35b9b69bb35303196a5264d5d7743e92ae8e19cd15e",
+  "item_daily_features.csv": "45943d63c44652b6403f3a4f78c7225e1afe7916bab17d9a674d7979245e085b",
+  "kuairec_caption_category.csv": "08f6ec40059c5a7ecdcebf615d080d9cf8f59f9497f6d66e8d5ccabdc7cab2d9",
+  "small_matrix.csv": "6b601cd38b2600d8734b4aede309ad73d1e201fdc4bd76d4bc7d2534793d7d15",
+  "social_network.csv": "92a65bc4190778f737619167bf46d920d935e4666b93101c963647c35a80c6a6",
+  "user_features.csv": "c03ce5c6e90c50407b45585bde983db3079492346f7fa676d860777abfd783f4"
+}

@@ -1,0 +1,183 @@
+{
+  "big_matrix": {
+    "rows": 12530806,
+    "users": 7176,
+    "items": 10728,
+    "density": 0.1628,
+    "distinct_user_item_pairs": 10300969,
+    "rows_missing_timestamp": 0,
+    "date_range": [
+      20200705,
+      20200905
+    ],
+    "watch_ratio": {
+      "quantiles": {
+        "0.01": 0.0,
+        "0.1": 0.1131,
+        "0.25": 0.3148,
+        "0.5": 0.7235,
+        "0.75": 1.1776,
+        "0.9": 1.784,
+        "0.95": 2.3351,
+        "0.99": 4.7934
+      },
+      "max": 573.46,
+      "mean": 0.9445,
+      "share_zero": 0.0192,
+      "positive_rate_by_threshold": {
+        "1.0": 0.3382,
+        "1.5": 0.1505,
+        "2.0": 0.0747,
+        "3.0": 0.0274
+      }
+    }
+  },
+  "small_matrix": {
+    "rows": 4676570,
+    "users": 1411,
+    "items": 3327,
+    "density": 0.9962,
+    "distinct_user_item_pairs": 4676570,
+    "rows_missing_timestamp": 181992,
+    "date_range": [
+      20200705,
+      20200905
+    ],
+    "watch_ratio": {
+      "quantiles": {
+        "0.01": 0.0223,
+        "0.1": 0.197,
+        "0.25": 0.4676,
+        "0.5": 0.7692,
+        "0.75": 1.1206,
+        "0.9": 1.5588,
+        "0.95": 1.954,
+        "0.99": 3.5851
+      },
+      "max": 571.52,
+      "mean": 0.9071,
+      "share_zero": 0.0065,
+      "positive_rate_by_threshold": {
+        "1.0": 0.3239,
+        "1.5": 0.1121,
+        "2.0": 0.0464,
+        "3.0": 0.0154
+      }
+    },
+    "observation_rate": 0.9962
+  },
+  "small_big_overlap_pairs": 0,
+  "big_rows_per_date": {
+    "20200705": 188387,
+    "20200706": 220759,
+    "20200707": 258638,
+    "20200708": 280317,
+    "20200709": 306509,
+    "20200710": 319622,
+    "20200711": 303216,
+    "20200712": 314906,
+    "20200801": 642310,
+    "20200802": 642105,
+    "20200803": 672559,
+    "20200804": 647405,
+    "20200805": 1300721,
+    "20200806": 674263,
+    "20200807": 607332,
+    "20200808": 648975,
+    "20200809": 594746,
+    "20200810": 577102,
+    "20200827": 370376,
+    "20200828": 380772,
+    "20200829": 398184,
+    "20200830": 361039,
+    "20200831": 682368,
+    "20200901": 297515,
+    "20200902": 267149,
+    "20200903": 232986,
+    "20200904": 181251,
+    "20200905": 159294
+  },
+  "big_ts_date_mismatch_share": 0.00124,
+  "positive_rate_by_duration": {
+    "<7s": {
+      "rows": 2466998,
+      "pos_rate_wr>2": 0.1807
+    },
+    "7-15s": {
+      "rows": 7953209,
+      "pos_rate_wr>2": 0.0582
+    },
+    "15-30s": {
+      "rows": 1108882,
+      "pos_rate_wr>2": 0.021
+    },
+    "30-60s": {
+      "rows": 683472,
+      "pos_rate_wr>2": 0.0059
+    },
+    ">60s": {
+      "rows": 318245,
+      "pos_rate_wr>2": 0.0021
+    }
+  },
+  "split": {
+    "train": {
+      "dates": [
+        20200705,
+        20200810
+      ],
+      "rows": 9199872,
+      "users": 7174,
+      "items": 7655,
+      "positives_wr>2": 688226
+    },
+    "val": {
+      "dates": [
+        20200827,
+        20200831
+      ],
+      "rows": 2192739,
+      "users": 6953,
+      "items": 4798,
+      "positives_wr>2": 161664
+    },
+    "test": {
+      "dates": [
+        20200901,
+        20200905
+      ],
+      "rows": 1138195,
+      "users": 6871,
+      "items": 4740,
+      "positives_wr>2": 86500
+    }
+  },
+  "label_sensitivity": {
+    "1.0": {
+      "test_eval_users": 6854,
+      "median_truth_items_per_user": 34.0,
+      "mean_train_positives_per_user": 539.4
+    },
+    "1.5": {
+      "test_eval_users": 6794,
+      "median_truth_items_per_user": 16.0,
+      "mean_train_positives_per_user": 239.2
+    },
+    "2.0": {
+      "test_eval_users": 6607,
+      "median_truth_items_per_user": 9.0,
+      "mean_train_positives_per_user": 118.4
+    },
+    "3.0": {
+      "test_eval_users": 5344,
+      "median_truth_items_per_user": 4.0,
+      "mean_train_positives_per_user": 43.5
+    }
+  },
+  "test_positive_rewatch_share": 0.0759,
+  "items": {
+    "n_categories": 31,
+    "items_with_multiple_categories": 1758,
+    "caption_missing_share": 0.1263
+  }
+}

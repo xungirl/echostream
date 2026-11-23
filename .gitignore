@@ -1,6 +1,6 @@
 # data, artifacts, caches -- never committed (make data re-downloads)
-data/
-artifacts/
+/data/
+/artifacts/
 .cache/
 .run/
 *.parquet
