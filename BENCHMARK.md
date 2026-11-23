@@ -126,3 +126,37 @@ needs healing, 3 repeats per scenario (4,500 requests per run). Raw per-second r
   from repeat #1 of three different scenarios, i.e. single noisy seconds rather than a systematic slow recovery; a stricter
   p99-based variant is also stored (`recovery_s_p99`), and it is noisier still because at 100 rps a per-second p99 is roughly
   the single slowest request.
+
+### Stage 5 — real-event replay (`make replay` / `make replay-paced` → `results/stage5_replay_*.json`)
+All big-matrix interactions in original timestamp order, `event_id = kr<row>`, batches of 1,000 through nginx → POST /events
+(4 API replicas) → 8 stream partitions → 4 workers → 3 feature nodes. Producer backpressure at 400k unprocessed entries.
+After the run, every user's counters (n / complete / skip / play / positives) in the feature store are compared with counts
+computed directly from the parquet file.
+
+| run | events | wall time to all applied | throughput | correctness | event→feature latency |
+|---|---|---|---|---|---|
+| max rate (`full`) | 12,530,806 | 336.7 s | **37,221 events/s** (median applied rate 36,634/s, p10 28,359/s) | **0 / 7,176 users mismatched**, 0 duplicates, 0 DLQ, 0 failed batches | backlog-dominated (max backlog 460,688; p50 bucket ≤ 30 s) |
+| paced 10k/s (`paced10k`, first 1.2 M events) | 1,200,000 | 120.4 s | 9,963 events/s | 0 / 7,176 mismatched | **p50/p95/p99 ≤ 50 ms** (histogram bucket upper bound; buckets …20, 50, 100… ms) |
+
+Feature-node memory after the full replay: 300 / 443 / 444 MB (mostly 12.5 M dedupe keys with a 1 h TTL).
+
+### Stage 5 — SYNTHETIC scale test (`make synthetic` → `results/stage5_synthetic.json`)
+**Synthetic data**: 256-cluster Gaussian vectors (64-d) generated inside each shard process; latency/memory only. One sequential
+client issues 500 queries (k = 100) through the real scatter-gather client (HTTP), 3 repeats. 1 replica per shard.
+
+| vectors | shards | index | vectors held per shard (computed) | shard RSS max (MB) | p50 ms | p99 ms | build+start s |
+|---|---|---|---|---|---|---|---|
+| 1 M | 1 | Flat | 244 MB | 946 | 6.17 | 8.05 | 1.1 |
+| 1 M | 2 | Flat | 122 MB | 695 | 5.68 | 6.71 | 0.8 |
+| 1 M | 4 | Flat | 61 MB | 386 | 6.81 | 8.12 | 0.9 |
+| 1 M | 8 | Flat | 31 MB | 231 | 9.30 | 11.07 | 1.0 |
+| 10 M | 1 | IVF (nlist 3162, nprobe 63) | 2,519 MB | 1,801* | 2.33 | 5.48 | 53.7 |
+| 10 M | 2 | IVF (2236 / 44) | 1,259 MB | 3,183 | 2.42 | 2.90 | 22.1 |
+| 10 M | 4 | IVF (1581 / 31) | 630 MB | 1,450 | 3.50 | 4.09 | 14.0 |
+| 10 M | 8 | IVF (1118 / 22) | 315 MB | 571 | 5.96 | 7.81 | 12.0 |
+
+\* macOS RSS excludes compressed pages, so it can be below the data actually held; the computed column is the reliable one.
+What this shows on one laptop: sharding divides **memory per node** and **build time**; it does **not** reduce query latency
+here — each extra shard adds ~0.5–0.8 ms of RPC/fan-out work in a single-threaded Python client, more than the per-shard
+search it saves. On this synthetic distribution IVF reaches recall@100 = 1.0 at ~2% of lists probed (100 queries vs exact
+brute force), which says nothing about real data — real-vector ANN recall is in Stage 2.

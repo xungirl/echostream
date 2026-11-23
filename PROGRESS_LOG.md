@@ -16,3 +16,32 @@ missing) and continue with "Next". Artifacts (models, indexes, per-user metric a
   95% bootstrap CIs, label sensitivity). Per-user arrays: `artifacts/per_user/stage1_*.npz` (rebuild by rerunning).
 - Headline (quality, big-matrix test NDCG@10): pop_recent7d 0.0430, pop_platform1d 0.0418, itemcf 0.0181, als 0.0162,
   pop_global 0.0087. Small matrix flips the order (itemcf 0.618, pop_global 0.561) — exposure/catalog drift matters.
+
+## Stage 2 — two-tower + ANN (done)
+- `scripts/stage2_two_tower.py` → `results/stage2_two_tower.json`; `scripts/stage2_ann_bench.py` → `results/stage2_ann.json`.
+- Selected: temperature 0.1 (val), variant `tt_logq` (logQ on, no mixed negatives; val NDCG@10 0.01361 vs 0.01359).
+  Test NDCG@10 0.0803 vs pop_recent7d 0.0430 (paired +0.0372 [0.0349, 0.0397]); removing logQ AND mixed negs → 0.0071.
+- Artifacts: `artifacts/two_tower/{main,val_main,rank_main}` (+ `artifacts/caption_emb.npy`, bge-small-zh in `.cache/hf`).
+- macOS gotcha: torch, faiss, LightGBM and implicit each bundle libomp. A process imports torch OR the others.
+
+## Stage 3 — multi-path recall (done)
+- `results/stage3_multipath.json`. Val-selected quotas = `no_content` (tt 90, cf 40, pop_recent 35, pop_platform 35).
+- Honest finding: merged recall@200 (0.233) < two-tower alone (0.271) on test — val (where tt was weak because of
+  catalog drift) favoured a mix. Content path recalls 21% of cold-item truth but gets quota 0. Not re-tuned on test.
+
+## Stage 4 — ranker (done)
+- `results/stage4_ranker.json` (rank phase: recall refit < Aug 30, labels Aug 30–31) and
+  `results/stage4_ranker_v1_valphase.json` (first attempt, lost to recall-only: train/serve skew). Model: `artifacts/ranker/main.txt`.
+- Test: recall+rank NDCG@10 0.1100 vs recall-only 0.0803 (+0.0297 [0.0267, 0.0325]); AUC 0.861, GAUC 0.813.
+- Caveat: the rank-phase protocol was designed after seeing the v1 test result.
+
+## Stage 5 — distributed serving core (done) → MVP (tag `mvp`)
+- Results: `results/stage5_load.json` (200 rps p50 12.1 / p99 26.3 ms), `stage5_chaos.json` (100% availability, 15 fault
+  runs; run `scripts/stage5_chaos_summarize.py` after a new chaos run), `stage5_replay_full.json` (12.53 M events,
+  37,221 ev/s, 0 mismatched users), `stage5_replay_paced10k.json` (p99 ≤ 50 ms), `stage5_synthetic.json`.
+- Docs: README (bilingual header from the brand draft; logo `<img>` commented out until `docs/brand/logo.svg` exists),
+  BENCHMARK.md, MVP_REPORT.md, DATA.md, INTERVIEW.md (draft, finalize in Stage 11), DRILLS.md.
+- Code for Stages 6–9 is committed but NOT yet run (scripts/stage6_mmr.py, stage7_sim_ab.py, stage8_*.py,
+  stage9_release_guard.py). PREREG.md is committed before Stage 7 runs.
+- Web demo (Stage 10) is being built in `web/` (not yet committed at the mvp tag).
+- How to resume: `make data && make train-all` (if artifacts/ missing), then the next stage script; `make ci` must stay green.
