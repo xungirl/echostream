@@ -61,7 +61,7 @@ func NewRing(nodes []string, vnodes int) *Ring {
 }
 
 // GetNode returns the node owning key: the first point with hash > hash(key),
-// wrapping around (Python: bisect_right(ring, (h, "\\uffff")) % len(ring)).
+// wrapping around (Python: bisect_right(ring, (h, "\uffff")) % len(ring)).
 func (r *Ring) GetNode(key string) string {
 	if len(r.points) == 0 {
 		panic("empty ring")
