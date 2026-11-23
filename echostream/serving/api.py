@@ -53,9 +53,39 @@ class State:
     rec: Recommender
     events: aioredis.Redis
     replica_name: str
+    reconcile_error: str | None = None
 
 
 S = State()
+
+
+async def reconcile_rollout() -> None:
+    """Stage 8: Postgres holds the desired rollout state (default / canary / shadow
+    versions). Every replica polls it, hot-loads missing bundles in a thread (the
+    old ones keep serving meanwhile), then switches atomically. A replica that
+    restarts mid-rollout converges to the same state."""
+    from echostream.store import db
+    while True:
+        try:
+            with db.connect() as conn:
+                st = db.get_rollout(conn)
+                if st:
+                    wanted = [v for v in (st["default_version"], st["canary_version"], st["shadow_version"]) if v]
+                    paths = db.bundle_paths(conn, [v for v in wanted if v not in S.rec.bundles])
+            if st:
+                for v, path in paths.items():
+                    b = await asyncio.to_thread(load_bundle, path)
+                    b.version = v             # the registry name wins over the manifest name
+                    S.rec.bundles[v] = b
+                if all(v in S.rec.bundles for v in wanted):
+                    S.rec.rollout = Rollout(default=st["default_version"], canary=st["canary_version"],
+                                            canary_percent=st["canary_percent"], shadow=st["shadow_version"])
+                    for v in [v for v in S.rec.bundles if v not in wanted]:
+                        S.rec.bundles.pop(v)          # retire unused versions (free memory)
+            S.reconcile_error = None
+        except Exception as e:                        # Postgres down: keep serving the current state
+            S.reconcile_error = f"{type(e).__name__}: {e}"[:200]
+        await asyncio.sleep(1.0)
 
 
 @asynccontextmanager
@@ -68,7 +98,13 @@ async def lifespan(app: FastAPI):
                         mmr_lambda=float(mmr) if mmr else None)
     S.events = aioredis.from_url(CLUSTER.events_redis_url, socket_timeout=0.5)
     S.replica_name = os.environ.get("ECHO_REPLICA_NAME", f"api-{os.getpid()}")
+    S.rec.cache_ttl_s = float(os.environ.get("ECHO_CACHE_TTL_S", "0"))
+    tasks = []
+    if os.environ.get("ECHO_PG") == "1":
+        tasks.append(asyncio.create_task(reconcile_rollout()))
     yield
+    for t in tasks:
+        t.cancel()
     await shards.close()
     await fs.close()
     await S.events.aclose()
@@ -85,7 +121,10 @@ async def recommend(user_id: int, n: int = 10, mmr_lambda: float | None = None):
         REQUESTS.labels("recommend", "404").inc()
         raise HTTPException(404, f"unknown user {user_id}")
     n = max(1, min(n, 100))
-    res = await S.rec.recommend(user_id, n, mmr_lambda=mmr_lambda)
+    if mmr_lambda is None:
+        res = await S.rec.cached_recommend(user_id, n)
+    else:
+        res = await S.rec.recommend(user_id, n, mmr_lambda=mmr_lambda)
     REQUESTS.labels("recommend", "200").inc()
     return {"user_id": res.user_id, "model_version": res.version, "served_by": S.replica_name,
             "items": res.items, "timings_ms": res.timings_ms, "shards": res.shards, "degraded": res.degraded}
@@ -159,15 +198,56 @@ async def cluster():
 
 
 @app.post("/chaos/{action}")
-async def chaos(action: str, target: str):
+async def chaos(action: str, target: str, ms: float | None = None):
     """Demo mode only: forward a chaos action to the process supervisor."""
     if os.environ.get("ECHO_DEMO_MODE") != "1":
         raise HTTPException(403, "chaos actions are only enabled in demo mode")
-    if action not in ("kill", "stop", "start", "delay"):
+    if action not in ("kill", "stop", "start", "freeze", "thaw", "delay"):
         raise HTTPException(400, "unknown action")
+    params = {"ms": ms} if (action == "delay" and ms is not None) else None
     async with httpx.AsyncClient() as c:
-        r = await c.post(f"http://127.0.0.1:{CLUSTER.supervisor_port}/{action}/{target}", timeout=5.0)
+        r = await c.post(f"http://127.0.0.1:{CLUSTER.supervisor_port}/{action}/{target}", params=params, timeout=5.0)
     return r.json()
+
+
+@app.get("/supervisor/status")
+async def supervisor_status():
+    """Process table from the supervisor (pids, restarts, held down / frozen) for the demo UI."""
+    try:
+        async with httpx.AsyncClient() as c:
+            r = await c.get(f"http://127.0.0.1:{CLUSTER.supervisor_port}/status", timeout=2.0)
+        return r.json()
+    except httpx.HTTPError:
+        return {}
+
+
+@app.get("/admin/rollout/stats")
+async def rollout_stats():
+    def lat(d):
+        import numpy as np
+        a = np.array(d) if d else np.zeros(1)
+        return {"p50_ms": round(float(np.percentile(a, 50)), 2), "p99_ms": round(float(np.percentile(a, 99)), 2)}
+    per = {v: {"n": st["n"], "errors": st["errors"], "degraded": st["degraded"], **lat(st["lat"])}
+           for v, st in S.rec.stats.items()}
+    sh = S.rec.shadow_stats
+    return {"replica": S.replica_name, "rollout": S.rec.rollout.__dict__, "loaded": sorted(S.rec.bundles),
+            "per_version": per, "reconcile_error": S.reconcile_error,
+            "shadow": {"n": sh["n"], "errors": sh["errors"], **lat(sh["lat"]),
+                       "overlap_at10_mean": round(sum(sh["overlap"]) / len(sh["overlap"]), 4) if sh["overlap"] else None},
+            "cache": {"ttl_s": S.rec.cache_ttl_s, "computations": S.rec.computations}}
+
+
+@app.post("/admin/rollout/reset_stats")
+async def reset_stats():
+    S.rec.reset_stats()
+    return {"ok": True}
+
+
+@app.post("/admin/cache")
+async def set_cache(ttl_s: float = 0.0):
+    S.rec.cache_ttl_s = ttl_s
+    S.rec.computations = 0
+    return {"ttl_s": ttl_s}
 
 
 @app.get("/metrics")
@@ -180,7 +260,7 @@ def main() -> None:
     ap.add_argument("--port", type=int, required=True)
     args = ap.parse_args()
     uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="warning", access_log=False,
-                loop="asyncio", timeout_keep_alive=30)
+                loop="uvloop", http="httptools", timeout_keep_alive=30)
 
 
 if __name__ == "__main__":

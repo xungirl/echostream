@@ -54,6 +54,11 @@ class ServingBundle:
     item_cats_csv: list[str]
     path: Path
 
+    def __post_init__(self) -> None:
+        # plain lists: per-request pandas .iloc lookups cost ~60 us each
+        self.titles = self.item_meta.title.astype(str).tolist()
+        self.category_names = self.item_meta.category_name.astype(str).tolist()
+
     @property
     def n_users(self) -> int:
         return len(self.pos_off) - 1

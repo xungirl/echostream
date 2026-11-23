@@ -22,52 +22,19 @@ from echostream.core.hashing import stable_hash
 from echostream.core.metrics import auc, bootstrap_ci, evaluate_users, gauc, paired_bootstrap_diff
 from echostream.domain.kuairec import KuaiRecAdapter
 from echostream.offline.evaluate import load_per_user, save_per_user, summarize, write_json
-from echostream.offline.phase import ARTIFACTS, history_frame, load_phase
-from echostream.rank.features import FEATURE_NAMES, GROUPS, build_features, build_rank_assets, recent_events_by_user
-from echostream.recall.assets import build_assets
-from echostream.recall.engine import RecallEngine
+from echostream.offline.phase import ARTIFACTS, load_phase
+from echostream.rank.features import FEATURE_NAMES, GROUPS
+from echostream.rank.offline import candidates_and_features, rerank
 
 PARAMS = {"objective": "binary", "learning_rate": 0.05, "num_leaves": 63, "min_data_in_leaf": 100,
           "feature_fraction": 0.8, "bagging_fraction": 0.8, "bagging_freq": 1, "lambda_l2": 1.0,
           "verbose": -1, "num_threads": 8, "seed": 0}
 
 
-def candidates_and_features(a, phase, tt_tag, quotas):
-    eng = RecallEngine(build_assets(a, phase, tt_tag, quotas=quotas))
-    hist_all = history_frame(a, phase.name, positives_only=False)
-    ra = build_rank_assets(a, hist_all, phase.target_start)
-    recent = recent_events_by_user(hist_all, a.n_users)
-    users, rows_u, X, y, cand_lists = [], [], [], [], []
-    for u in phase.eval_users:
-        hist = phase.pos_history[u]
-        uvec = eng.user_vector(int(u), hist)
-        paths = eng.all_paths(int(u), hist, phase.seen[u].indices, k=200, user_vec=uvec)
-        cands = eng.merge(paths)
-        if not cands:
-            continue
-        X.append(build_features(ra, eng, int(u), uvec, hist, recent[u], cands))
-        items = [c.item for c in cands]
-        y.append(np.array([i in phase.truth[u] for i in items], np.float32))
-        rows_u.append(np.full(len(items), u))
-        users.append(u)
-        cand_lists.append(items)
-    return np.array(users), np.concatenate(rows_u), np.concatenate(X), np.concatenate(y), cand_lists
-
-
 def train(X, y, groups_u, valid_mask, feature_idx, params, rounds=600):
     dtr = lgb.Dataset(X[~valid_mask][:, feature_idx], y[~valid_mask])
     dva = lgb.Dataset(X[valid_mask][:, feature_idx], y[valid_mask])
     return lgb.train(params, dtr, rounds, valid_sets=[dva], callbacks=[lgb.early_stopping(50, verbose=False)])
-
-
-def rerank(cand_lists, scores, row_users):
-    out, pos = [], 0
-    for items in cand_lists:
-        s = scores[pos:pos + len(items)]
-        order = np.lexsort((np.array(items), -s))
-        out.append([items[j] for j in order])
-        pos += len(items)
-    return out
 
 
 def ensure_two_tower(tag: str, phase_name: str):
@@ -97,14 +64,14 @@ def main():
     out = {"params": PARAMS, "features": FEATURE_NAMES, "groups": GROUPS, "train_phase": train_phase,
            "train_target_dates": list(a.split_spec().rank if train_phase == "rank" else a.split_spec().val)}
 
-    vu, vrows, vX, vy, vcands = candidates_and_features(a, val, tt_tag, quotas)
+    vu, vrows, vX, vy, vcands, _, _ = candidates_and_features(a, val, tt_tag, quotas)
     print("val rows", vX.shape, "pos rate", vy.mean(), f"{time.time()-t0:.0f}s", flush=True)
     valid_mask = np.array([stable_hash(f"rk:{u}") % 5 == 0 for u in vrows])   # 20% of val users for early stopping
     all_idx = np.arange(len(FEATURE_NAMES))
     model = train(vX, vy, vrows, valid_mask, all_idx, PARAMS)
     out["best_iteration"] = model.best_iteration
 
-    tu, trows, tX, ty, tcands = candidates_and_features(a, test, "main", quotas)
+    tu, trows, tX, ty, tcands, _, _ = candidates_and_features(a, test, "main", quotas)
     print("test rows", tX.shape, "pos rate", ty.mean(), f"{time.time()-t0:.0f}s", flush=True)
     out["rows"] = {"val": int(len(vy)), "val_pos_rate": round(float(vy.mean()), 5),
                    "test": int(len(ty)), "test_pos_rate": round(float(ty.mean()), 5),
@@ -112,7 +79,7 @@ def main():
     truths = test.truths_for(tu)
 
     def eval_scores(scores):
-        ranked = rerank(tcands, scores, trows)
+        ranked = rerank(tcands, scores)
         pu = evaluate_users(ranked, truths, (10, 50, 100, 200), a.item_categories(), a.n_items)
         return pu, {"auc": round(auc(ty, scores), 5), "gauc": round(gauc(trows, ty, scores), 5)}
 

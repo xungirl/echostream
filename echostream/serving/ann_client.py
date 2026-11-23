@@ -11,12 +11,14 @@ partial (core.scatter_gather.merge_topk).
 from __future__ import annotations
 
 import asyncio
+import base64
 import itertools
 import time
 from dataclasses import dataclass, field
 
 import httpx
 import numpy as np
+import orjson
 
 from echostream.core.scatter_gather import MergeResult, merge_topk
 from echostream.serving.config import TIMEOUTS, Timeouts
@@ -65,8 +67,7 @@ class ShardClient:
             rep.ejected_until = time.monotonic() + self.t.eject_ms / 1000
             rep.consecutive_failures = 0
 
-    async def search_shard(self, s: int, vec: list[float], k: int, deadline: float, version: str | None,
-                           exclude: list[int]) -> tuple[tuple[list[int], list[float]] | None, ShardCall]:
+    async def search_shard(self, s: int, payload: dict, deadline: float) -> tuple[tuple[list[int], list[float]] | None, ShardCall]:
         call = ShardCall(shard=s, ok=False)
         t0 = time.monotonic()
         for r in self._order(s):
@@ -78,10 +79,11 @@ class ShardClient:
             a0 = time.monotonic()
             try:
                 resp = await self.http.post(
-                    f"{self.shards[s][r].url}/search", json={"vector": vec, "k": k, "version": version, "exclude": exclude},
-                    headers={"X-Deadline-Ms": str((time.time() + remaining) * 1000)}, timeout=timeout)
+                    f"{self.shards[s][r].url}/search", content=orjson.dumps(payload),
+                    headers={"X-Deadline-Ms": str((time.time() + remaining) * 1000),
+                             "Content-Type": "application/json"}, timeout=timeout)
                 resp.raise_for_status()
-                body = resp.json()
+                body = orjson.loads(resp.content)
                 self._record(s, r, True)
                 call.attempts.append({"replica": r, "status": "ok", "ms": round((time.monotonic() - a0) * 1000, 2)})
                 call.ok, call.replica = True, r
@@ -89,7 +91,7 @@ class ShardClient:
                 return (body["ids"], body["scores"]), call
             except (httpx.TimeoutException, asyncio.TimeoutError):
                 status = "timeout"
-            except (httpx.HTTPError, ValueError, KeyError):
+            except (httpx.HTTPError, ValueError, KeyError, orjson.JSONDecodeError):
                 status = "error"
             self._record(s, r, False)
             call.attempts.append({"replica": r, "status": status, "ms": round((time.monotonic() - a0) * 1000, 2)})
@@ -98,10 +100,10 @@ class ShardClient:
 
     async def search(self, user_vec: np.ndarray, k: int, deadline: float, version: str | None = None,
                      exclude: list[int] | None = None) -> tuple[MergeResult, list[ShardCall]]:
-        vec = [float(x) for x in user_vec]
-        ex = exclude or []
-        res = await asyncio.gather(*(self.search_shard(s, vec, k, deadline, version, ex)
-                                     for s in range(len(self.shards))))
+        payload = {"vector_b64": base64.b64encode(np.asarray(user_vec, dtype="<f4").tobytes()).decode(),
+                   "exclude_b64": base64.b64encode(np.asarray(exclude or [], dtype="<i4").tobytes()).decode(),
+                   "k": k, "version": version}
+        res = await asyncio.gather(*(self.search_shard(s, payload, deadline) for s in range(len(self.shards))))
         merged = merge_topk([r for r, _ in res], k)
         return merged, [c for _, c in res]
 

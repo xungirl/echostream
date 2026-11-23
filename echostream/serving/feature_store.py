@@ -20,7 +20,7 @@ from redis.exceptions import NoScriptError
 from echostream.core.hashing import ConsistentHashRing
 
 APPLY_EVENT_LUA = """
--- KEYS: dedupe, hist, cnt   ARGV: ttl, item, wr, ts, action, cats(csv), hist_max, pos_threshold
+-- KEYS: dedupe, hist, cnt, rec-cache   ARGV: ttl, item, wr, ts, action, cats(csv), hist_max, pos_threshold
 if not redis.call('SET', KEYS[1], '1', 'NX', 'EX', tonumber(ARGV[1])) then
   return 0
 end
@@ -30,6 +30,7 @@ redis.call('HINCRBY', KEYS[3], 'n', 1)
 redis.call('HINCRBY', KEYS[3], ARGV[5], 1)
 redis.call('HINCRBYFLOAT', KEYS[3], 'sum_wr', ARGV[3])
 redis.call('HSET', KEYS[3], 'last_ts', ARGV[4])
+redis.call('DEL', KEYS[4])   -- cached recommendations are now stale
 local positive = tonumber(ARGV[3]) > tonumber(ARGV[8])
 if positive then redis.call('HINCRBY', KEYS[3], 'pos', 1) end
 for c in string.gmatch(ARGV[6], '[^,]+') do
@@ -88,7 +89,7 @@ class FeatureStore:
 
     @staticmethod
     def apply_args(ev: dict, cats: str, ttl: int, hist_max: int, thr: float) -> tuple[list[str], list]:
-        keys = [f"ev:{ev['event_id']}", hist_key(ev["user_id"]), cnt_key(ev["user_id"])]
+        keys = [f"ev:{ev['event_id']}", hist_key(ev["user_id"]), cnt_key(ev["user_id"]), f"rec:{ev['user_id']}"]
         args = [ttl, ev["item_id"], repr(float(ev["watch_ratio"])), repr(float(ev["ts"])), ev["action"],
                 cats, hist_max, thr]
         return keys, args

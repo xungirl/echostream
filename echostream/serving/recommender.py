@@ -15,9 +15,13 @@ Each fallback is reported in `degraded` and counted in Prometheus.
 from __future__ import annotations
 
 import asyncio
+import random
 import time
+from collections import defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
+
+import orjson
 
 import numpy as np
 from prometheus_client import Counter, Histogram
@@ -26,6 +30,7 @@ from echostream.core.hashing import ab_bucket
 from echostream.core.mmr import mmr_rerank
 from echostream.core.recall_merge import Candidate
 from echostream.rank.features import POS_THR, build_features
+from echostream.rank.offline import blend_similarity
 from echostream.serving.ann_client import ShardClient
 from echostream.serving.bundle import ServingBundle
 from echostream.serving.config import TIMEOUTS, Timeouts
@@ -34,6 +39,7 @@ from echostream.serving.feature_store import FeatureStore
 STAGE_SECONDS = Histogram("echostream_stage_seconds", "time per /recommend stage", ["stage"],
                           buckets=[0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0])
 FALLBACKS = Counter("echostream_fallback_total", "degraded responses by kind", ["kind"])
+CACHE = Counter("echostream_rec_cache_total", "per-user recommendation cache", ["result"])
 SHADOW_OVERLAP = Histogram("echostream_shadow_overlap_at10", "overlap@10 between served and shadow model",
                            buckets=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
 
@@ -73,6 +79,85 @@ class Recommender:
         self.t = timeouts
         self.mmr_lambda = mmr_lambda
         self.pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="ranker")
+        # per-version online stats for shadow/canary decisions (Stage 8)
+        self.stats: dict[str, dict] = defaultdict(lambda: {"n": 0, "errors": 0, "degraded": 0,
+                                                           "lat": deque(maxlen=5000)})
+        self.shadow_stats = {"n": 0, "errors": 0, "overlap": deque(maxlen=5000), "lat": deque(maxlen=5000)}
+        # per-user result cache (Stage 8): off by default
+        self.cache_ttl_s: float = 0.0
+        self.cache_jitter = 0.2
+        self.inflight: dict[tuple, asyncio.Future] = {}   # single-flight inside this process
+        self.computations = 0
+
+    def reset_stats(self) -> None:
+        self.stats.clear()
+        self.shadow_stats.update(n=0, errors=0)
+        self.shadow_stats["overlap"].clear()
+        self.shadow_stats["lat"].clear()
+
+    # ------------------------------------------------------------------ cache
+    async def cached_recommend(self, user_id: int, n: int = 10) -> Result:
+        """Per-user result cache in the user's feature-store node (TTL + jitter; the
+        worker deletes the key when a new event for the user is applied).
+        Stampede protection: one computation per (user, version, n) per process
+        (single-flight), plus a short Redis lock across replicas."""
+        if self.cache_ttl_s <= 0 or self.features is None:
+            return await self.recommend(user_id, n)
+        version = self.rollout.version_for(user_id)
+        key, field_ = f"rec:{user_id}", f"{version}:{n}"
+        client = self.features.client_for(user_id)
+        try:
+            raw = await asyncio.wait_for(client.hget(key, field_), 0.02)
+        except Exception:
+            raw = None
+        if raw:
+            CACHE.labels("hit").inc()
+            d = orjson.loads(raw)
+            return Result(**{**d, "degraded": d["degraded"] + ["cache_hit"]})
+        CACHE.labels("miss").inc()
+        fkey = (user_id, version, n)
+        if fkey in self.inflight:                       # someone in this process is computing it
+            CACHE.labels("singleflight_wait").inc()
+            return await asyncio.shield(self.inflight[fkey])
+        fut = asyncio.get_running_loop().create_future()
+        self.inflight[fkey] = fut
+        try:
+            got_lock = False
+            try:
+                got_lock = bool(await asyncio.wait_for(client.set(f"lock:{key}:{field_}", 1, nx=True, px=300), 0.02))
+            except Exception:
+                pass
+            if not got_lock:                            # another replica is computing: wait briefly for it
+                for _ in range(3):
+                    await asyncio.sleep(0.01)
+                    try:
+                        raw = await asyncio.wait_for(client.hget(key, field_), 0.02)
+                    except Exception:
+                        raw = None
+                    if raw:
+                        CACHE.labels("lock_wait_hit").inc()
+                        d = orjson.loads(raw)
+                        res = Result(**{**d, "degraded": d["degraded"] + ["cache_hit"]})
+                        fut.set_result(res)
+                        return res
+            res = await self.recommend(user_id, n)
+            self.computations += 1
+            if not res.degraded:                        # never cache a degraded answer
+                ttl = self.cache_ttl_s * (1 + random.uniform(-self.cache_jitter, self.cache_jitter))
+                try:
+                    async with client.pipeline(transaction=False) as pipe:
+                        pipe.hset(key, field_, orjson.dumps(res.__dict__))
+                        pipe.pexpire(key, int(ttl * 1000))
+                        await asyncio.wait_for(pipe.execute(), 0.05)
+                except Exception:
+                    pass
+            fut.set_result(res)
+            return res
+        except Exception as e:
+            fut.set_exception(e)
+            raise
+        finally:
+            self.inflight.pop(fkey, None)
 
     # ------------------------------------------------------------------ helpers
     def _popularity(self, b: ServingBundle, user_id: int, n: int, exclude: np.ndarray) -> list[Candidate]:
@@ -82,8 +167,8 @@ class Recommender:
     def _items_json(self, b: ServingBundle, cands: list[Candidate], rank_scores: np.ndarray | None) -> list[dict]:
         out = []
         for pos, c in enumerate(cands):
-            row = b.item_meta.iloc[c.item]
-            out.append({"item_id": c.item, "title": row.title, "category": row.category_name, "source": c.source,
+            out.append({"item_id": c.item, "title": b.titles[c.item], "category": b.category_names[c.item],
+                        "source": c.source,
                         "sources": {k: round(v, 5) for k, v in c.all_sources.items()},
                         "recall_score": round(c.score, 5),
                         "rank_score": None if rank_scores is None else round(float(rank_scores[pos]), 5)})
@@ -104,6 +189,10 @@ class Recommender:
             res = Result(user_id, version, self._items_json(b, cands, None), {}, [], ["budget_exceeded_popularity"])
         res.timings_ms["total"] = round((time.monotonic() - t_start) * 1000, 3)
         STAGE_SECONDS.labels("total").observe(res.timings_ms["total"] / 1000)
+        st = self.stats[version]
+        st["n"] += 1
+        st["lat"].append(res.timings_ms["total"])
+        st["degraded"] += bool(res.degraded)
         if self.rollout.shadow and self.rollout.shadow != version and self.rollout.shadow in self.bundles:
             asyncio.get_running_loop().create_task(self._shadow(user_id, n, res))
         return res
@@ -113,11 +202,17 @@ class Recommender:
         try:
             sb = self.bundles[self.rollout.shadow]
             deadline = time.monotonic() + self.t.total_ms / 1000
+            t0 = time.monotonic()
             shadow = await self._pipeline(sb, user_id, n, deadline, None)
             a = {x["item_id"] for x in served.items[:10]}
             s = {x["item_id"] for x in shadow.items[:10]}
-            SHADOW_OVERLAP.observe(len(a & s) / max(len(a), 1))
+            overlap = len(a & s) / max(len(a), 1)
+            SHADOW_OVERLAP.observe(overlap)
+            self.shadow_stats["n"] += 1
+            self.shadow_stats["overlap"].append(overlap)
+            self.shadow_stats["lat"].append((time.monotonic() - t0) * 1000)
         except Exception:
+            self.shadow_stats["errors"] += 1
             FALLBACKS.labels("shadow_error").inc()
 
     async def _pipeline(self, b: ServingBundle, user_id: int, n: int, deadline: float,
@@ -209,22 +304,10 @@ class Recommender:
         lam = self.mmr_lambda if mmr_lambda is None else mmr_lambda
         if lam is not None and lam < 1.0 and rank_scores is not None:
             top = min(len(cands), max(5 * n, 50))
-            sim = item_similarity(b, [c.item for c in cands[:top]])
+            sim = blend_similarity(b.rank_assets.item_cats, b.engine.a.caption_emb, [c.item for c in cands[:top]])
             pick = mmr_rerank(rank_scores[:top], sim, lam, n)
             cands = [cands[j] for j in pick]
             rank_scores = rank_scores[pick]
             lap("mmr", t)
         return Result(user_id, b.version, self._items_json(b, cands[:n], None if rank_scores is None else rank_scores[:n]),
                       timings, shard_info, degraded)
-
-
-def item_similarity(b: ServingBundle, items: list[int]) -> np.ndarray:
-    """Similarity for MMR: mean of category Jaccard and caption-embedding cosine (clipped to [0, 1])."""
-    cats = b.rank_assets.item_cats[items]
-    inter = cats @ cats.T
-    sizes = cats.sum(1)
-    union = sizes[:, None] + sizes[None, :] - inter
-    jac = np.divide(inter, union, out=np.ones_like(inter), where=union > 0)
-    emb = b.engine.a.caption_emb[items]
-    cos = np.clip(emb @ emb.T, 0.0, 1.0)
-    return 0.5 * jac + 0.5 * cos
