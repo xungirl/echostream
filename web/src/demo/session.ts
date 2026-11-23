@@ -77,11 +77,6 @@ export class DemoSession {
     return step;
   }
 
-  /** Recompute the current screen without a new event (used to measure compute time). */
-  recompute(): Screen {
-    return recommend(this.model, this.user, this.store);
-  }
-
   private makeStep(prev: Step | null, reaction: Step["reaction"]): Step {
     const screen = recommend(this.model, this.user, this.store);
     const now = new Set(screen.shown.map((r) => r.item));

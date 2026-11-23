@@ -4,10 +4,10 @@
  *   - time to interactive: navigation start -> first screen rendered with live buttons,
  *     5 fresh page loads from localhost, and 3 with simulated 20 Mbit/s, 40 ms latency
  *   - per-screen compute: >= 100 recomputes per viewer (each after one reaction), in the page
- * Writes ../results/stage13_browser_demo.json.
+ * Writes ../results/stage13_browser_demo.json (latest run) and appends to ../results/stage13_browser_demo_runs.jsonl.
  */
 import { expect, test, type Page } from "@playwright/test";
-import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { appendFileSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { cpus, platform, release, totalmem } from "node:os";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,6 +19,7 @@ test.skip(process.env.MEASURE !== "1", "set MEASURE=1 to run the measurements");
 
 const MODEL = resolve(HERE, "../demo-public/model");
 const OUT = resolve(HERE, "../../results/stage13_browser_demo.json");
+const RUNS = resolve(HERE, "../../results/stage13_browser_demo_runs.jsonl"); // one line per run (repeats)
 const RECOMPUTES = 120;
 
 const q = (xs: number[], p: number) => {
@@ -106,5 +107,6 @@ test("measure bundle size, time to interactive and per-screen compute", async ({
     },
   };
   writeFileSync(OUT, JSON.stringify(out, null, 1) + "\n");
+  appendFileSync(RUNS, JSON.stringify({ ...out, at: new Date().toISOString() }) + "\n");
   console.log(JSON.stringify({ size: out.size.transfer_bytes, tti: out.tti_ms.localhost, throttled: out.tti_ms.simulated_20mbps_40ms.median, compute: out.compute_ms.all }, null, 1));
 });

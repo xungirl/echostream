@@ -52,7 +52,6 @@ export default function DemoApp({ modelBase = "./model/" }: { modelBase?: string
   const [error, setError] = useState<string | null>(null);
   const [session, setSession] = useState<DemoSession | null>(null);
   const [step, setStep] = useState<Step | null>(null);
-  const [busy, setBusy] = useState(false);
   const [hint, setHint] = useState(() => store.get(HINT_KEY) !== "1");
   const [theme, setTheme] = useState<string | null>(() => store.get(THEME_KEY));
   const [announce, setAnnounce] = useState("");
@@ -109,10 +108,8 @@ export default function DemoApp({ modelBase = "./model/" }: { modelBase?: string
   const react = useCallback(
     (item: number, kind: (typeof REACTIONS)[number]["kind"]) => {
       if (!session) return;
-      setBusy(true);
-      const next = session.react(item, kind);
+      const next = session.react(item, kind); // synchronous: one event + one full recompute (~10 ms)
       setStep(next);
-      setBusy(false);
       setAnnounce(`${REACTIONS.find((r) => r.kind === kind)!.label}. New screen: ${next.fresh.length} new videos, ${next.dropped.length} left.`);
     },
     [session],
@@ -202,7 +199,7 @@ export default function DemoApp({ modelBase = "./model/" }: { modelBase?: string
           </section>
 
           <main className="layout">
-            <Phone model={model} step={step} busy={busy} onReact={react} />
+            <Phone model={model} step={step} onReact={react} />
             <Funnel model={model} step={step} />
             <div className="side">
               <Echo model={model} step={step} prev={prev} />

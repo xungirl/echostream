@@ -9,11 +9,10 @@ import { useFlip } from "./anim";
 interface Props {
   model: Model;
   step: Step;
-  busy: boolean;
   onReact: (item: number, kind: Reaction) => void;
 }
 
-export default function Phone({ model, step, busy, onReact }: Props) {
+export default function Phone({ model, step, onReact }: Props) {
   const list = useRef<HTMLOListElement>(null);
   const [leaving, setLeaving] = useState<{ item: number; kind: Reaction } | null>(null);
   useFlip(list, [step.n]);
@@ -21,7 +20,7 @@ export default function Phone({ model, step, busy, onReact }: Props) {
   const rankOf = new Map(step.screen.ranked.map((r, k) => [r.item, k + 1]));
 
   const react = (item: number, kind: Reaction) => {
-    if (busy || leaving) return;
+    if (leaving) return;
     setLeaving({ item, kind });
     // let the swipe animation play, then recompute
     window.setTimeout(() => {
@@ -61,7 +60,7 @@ export default function Phone({ model, step, busy, onReact }: Props) {
             rankPos={rankOf.get(r.item)!}
             fresh={fresh.has(r.item)}
             leaving={leaving?.item === r.item ? leaving.kind : null}
-            disabled={busy || !!leaving}
+            disabled={!!leaving}
             onReact={react}
             onKey={onKey}
           />

@@ -4,7 +4,7 @@
  *   -> LightGBM rank -> MMR (lambda 0.7, top 50) -> 10 videos
  * Returns every intermediate result so the page can explain how the screen was made.
  */
-import { PATHS, type Model, type PathName, type UserRecord } from "./bundle";
+import type { Model, PathName, UserRecord } from "./bundle";
 import { buildFeatures } from "./features";
 import { predictRows } from "./gbdt";
 import { blendSimilarity, mmrRerank } from "./mmr";
@@ -86,4 +86,3 @@ export function recommend(m: Model, user: UserRecord, store: RealtimeStore, n = 
   return { uid: user.uid, userVec: uvec, histPos, nExcluded, paths, merged, rankScores, ranked, shown, timingsMs: times };
 }
 
-export { PATHS };
