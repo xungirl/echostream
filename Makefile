@@ -1,9 +1,13 @@
 # echostream — every target runs locally; nothing touches a cloud.
 PY := uv run python
+GO ?= go
 export KMP_DUPLICATE_LIB_OK := TRUE
+# which event worker the cluster runs: python (default) | go | mixed  (e.g. make cluster-up ECHO_WORKER_IMPL=go)
+export ECHO_WORKER_IMPL ?= python
 
 .PHONY: setup data stage0 stage1 stage2 stage3 stage4 bundle train-all cluster-up cluster-down \
-        test-unit test-integration test ci load chaos replay replay-paced synthetic demo clean-run
+        test-unit test-integration test ci load chaos replay replay-paced synthetic demo clean-run \
+        go-build go-test parity bench-go
 
 setup:            ## install Python deps (uv) and web deps (npm)
 	uv sync
@@ -40,8 +44,16 @@ test-integration: ## starts/stops its own clusters on ports 27000/28000
 	OMP_NUM_THREADS=1 uv run pytest tests/integration -q
 test: test-unit test-integration
 ci:               ## everything that needs no network and no LLM key
+	@if command -v $(GO) >/dev/null 2>&1; then $(MAKE) go-test; else echo "go not installed: skipping Go tests"; fi
 	OMP_NUM_THREADS=1 uv run pytest tests -q
 	@if [ -d web/node_modules ]; then cd web && npx vitest run; else echo "web deps missing: run make setup"; fi
+
+go-build:         ## build the Go event worker -> go/worker/bin/echostream-worker
+	cd go/worker && $(GO) build -o bin/echostream-worker ./cmd/echostream-worker
+go-test: go-build ## go vet + race-detector tests (3 runs each); worker tests start their own redis-server
+	cd go/worker && $(GO) vet ./... && $(GO) test -race -count=3 ./...
+parity: go-build  ## same events through the Python and the Go worker -> diff feature store, DLQ, counters
+	$(PY) scripts/go_parity.py
 
 load:
 	$(PY) scripts/stage5_load.py

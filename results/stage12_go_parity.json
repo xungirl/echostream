@@ -1,0 +1,196 @@
+{
+ "kind": "parity (same events, fresh Redis/Postgres per implementation)",
+ "impls": [
+  "python",
+  "go"
+ ],
+ "events_per_phase": [
+  1216,
+  2016,
+  14300
+ ],
+ "users": 300,
+ "ground_truth_ok": true,
+ "archive_checked": true,
+ "identical": true,
+ "diff": {
+  "feature_keys": {
+   "a": 14802,
+   "b": 14802,
+   "only_a": [],
+   "only_b": [],
+   "differing": [],
+   "n_differing": 0,
+   "identical": true
+  },
+  "dlq": {
+   "a": 28,
+   "b": 28,
+   "identical": true
+  },
+  "counters": {
+   "phase1": {
+    "a": {
+     "applied": 996,
+     "duplicates": 194,
+     "dlq": 14,
+     "claimed": 596,
+     "retries": 0,
+     "archived": 1190,
+     "archive_failures": 0
+    },
+    "b": {
+     "applied": 996,
+     "duplicates": 194,
+     "dlq": 14,
+     "claimed": 596,
+     "retries": 0,
+     "archived": 1190,
+     "archive_failures": 0
+    },
+    "identical": true
+   },
+   "phase2": {
+    "a": {
+     "applied": 1202,
+     "duplicates": 800,
+     "dlq": 14,
+     "claimed": 0,
+     "retries": 0,
+     "archived": 2002,
+     "archive_failures": 0
+    },
+    "b": {
+     "applied": 1202,
+     "duplicates": 800,
+     "dlq": 14,
+     "claimed": 0,
+     "retries": 0,
+     "archived": 2002,
+     "archive_failures": 0
+    },
+    "identical": true
+   }
+  },
+  "archive": {
+   "a": 14198,
+   "b": 14198,
+   "identical": true
+  },
+  "identical": true
+ },
+ "python": {
+  "impl": "python",
+  "counters": {
+   "phase1": {
+    "applied": 996,
+    "duplicates": 194,
+    "dlq": 14,
+    "claimed": 596,
+    "retries": 0,
+    "archived": 1190,
+    "archive_failures": 0
+   },
+   "phase2": {
+    "applied": 1202,
+    "duplicates": 800,
+    "dlq": 14,
+    "claimed": 0,
+    "retries": 0,
+    "archived": 2002,
+    "archive_failures": 0
+   },
+   "phase3_informational": {
+    "applied": 12151,
+    "duplicates": 2843,
+    "dlq": 14,
+    "claimed": 27,
+    "retries": 0,
+    "archived": 14994,
+    "archive_failures": 0
+   }
+  },
+  "ghost_pending": 608,
+  "deleted_while_pending": [
+   "23-0",
+   "24-0",
+   "9-0",
+   "10-0",
+   "5-0",
+   "6-0",
+   "1-0",
+   "2-0",
+   "3-0",
+   "4-0",
+   "7-0",
+   "8-0"
+  ],
+  "after_graceful_shutdown": {
+   "leases_held": 0,
+   "w0_alive": false
+  },
+  "killed_with_pending": 27,
+  "pel_empty": true,
+  "seconds": 14.0,
+  "users_mismatched_vs_ground_truth": 0
+ },
+ "go": {
+  "impl": "go",
+  "counters": {
+   "phase1": {
+    "applied": 996,
+    "duplicates": 194,
+    "dlq": 14,
+    "claimed": 596,
+    "retries": 0,
+    "archived": 1190,
+    "archive_failures": 0
+   },
+   "phase2": {
+    "applied": 1202,
+    "duplicates": 800,
+    "dlq": 14,
+    "claimed": 0,
+    "retries": 0,
+    "archived": 2002,
+    "archive_failures": 0
+   },
+   "phase3_informational": {
+    "applied": 12040,
+    "duplicates": 2836,
+    "dlq": 14,
+    "claimed": 1,
+    "retries": 0,
+    "archived": 14876,
+    "archive_failures": 0
+   }
+  },
+  "ghost_pending": 608,
+  "deleted_while_pending": [
+   "23-0",
+   "24-0",
+   "9-0",
+   "10-0",
+   "5-0",
+   "6-0",
+   "1-0",
+   "2-0",
+   "3-0",
+   "4-0",
+   "7-0",
+   "8-0"
+  ],
+  "after_graceful_shutdown": {
+   "leases_held": 0,
+   "w0_alive": false
+  },
+  "killed_with_pending": 1,
+  "pel_empty": true,
+  "seconds": 13.1,
+  "users_mismatched_vs_ground_truth": 0
+ },
+ "feature_keys_compared": 14802,
+ "dlq_entries_compared": 28,
+ "archive_rows_compared": 14198,
+ "date": "2026-11-23 00:02"
+}

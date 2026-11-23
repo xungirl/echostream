@@ -1,5 +1,6 @@
 import os
 import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -19,11 +20,31 @@ def run_dir(name: str) -> Path:
     return d
 
 
-@pytest.fixture(scope="module")
-def events_cluster():
-    env = {"ECHO_PORT_BASE": "27000", "ECHO_WORKERS": "3", "ECHO_PARTITIONS": "6", "ECHO_FEATURE_NODES": "3",
-           "ECHO_LEASE_MS": "1500", "ECHO_CLAIM_IDLE_MS": "500", "ECHO_WORKER_BATCH": "200"}
-    with cluster("events", env=env, run_dir=run_dir("events")) as cfg:
+GO_WORKER = ROOT / "go" / "worker" / "bin" / "echostream-worker"
+
+
+def build_go_worker() -> Path:
+    """Build the Go worker (cached by Go, ~1 s when unchanged); skip the test if Go is missing."""
+    go = shutil.which("go")
+    if go is None:
+        pytest.skip("go toolchain not installed")
+    subprocess.run([go, "build", "-o", str(GO_WORKER), "./cmd/echostream-worker"], cwd=ROOT / "go" / "worker",
+                   check=True)
+    return GO_WORKER
+
+
+# the same reliability tests run against the Python workers, the Go workers, and a mixed
+# cluster (w0, w2 Python; w1 Go) where both implementations share leases and streams
+@pytest.fixture(scope="module", params=["python", "go", "mixed"])
+def events_cluster(request):
+    impl = request.param
+    if impl != "python":
+        build_go_worker()
+    port = {"python": "27000", "go": "25000", "mixed": "24000"}[impl]
+    env = {"ECHO_PORT_BASE": port, "ECHO_WORKERS": "3", "ECHO_PARTITIONS": "6", "ECHO_FEATURE_NODES": "3",
+           "ECHO_LEASE_MS": "1500", "ECHO_CLAIM_IDLE_MS": "500", "ECHO_WORKER_BATCH": "200",
+           "ECHO_WORKER_IMPL": impl}
+    with cluster("events", env=env, run_dir=run_dir(f"events-{impl}")) as cfg:
         yield cfg
 
 
