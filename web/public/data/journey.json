@@ -1,0 +1,86 @@
+[
+ {
+  "stage": 0,
+  "title": "Data & labels",
+  "zh": "数据与标签",
+  "done": true,
+  "result": "KuaiRec verified; label = watch_ratio > 2.0; catalog drift measured (86% of test positives unseen in train)"
+ },
+ {
+  "stage": 1,
+  "title": "Offline eval & baselines",
+  "zh": "离线评测与基线",
+  "done": true,
+  "result": "best baseline (recent popularity) test NDCG@10 0.043"
+ },
+ {
+  "stage": 2,
+  "title": "Two-tower + ANN",
+  "zh": "双塔召回 + 向量检索",
+  "done": true,
+  "result": "two-tower (logQ) test NDCG@10 0.0803"
+ },
+ {
+  "stage": 3,
+  "title": "Multi-path recall",
+  "zh": "多路召回与冷启动",
+  "done": true,
+  "result": "merged recall@200 0.2327"
+ },
+ {
+  "stage": 4,
+  "title": "Ranking",
+  "zh": "排序",
+  "done": true,
+  "result": "recall+rank NDCG@10 0.11, GAUC 0.81266"
+ },
+ {
+  "stage": 5,
+  "title": "Distributed serving · MVP",
+  "zh": "分布式服务、压测与故障注入",
+  "done": true,
+  "result": "sharded index, event streams, feature store, load + chaos + 12.5M real-event replay"
+ },
+ {
+  "stage": 6,
+  "title": "MMR re-rank",
+  "zh": "MMR 重排",
+  "done": true,
+  "result": "default lambda 0.7"
+ },
+ {
+  "stage": 7,
+  "title": "Simulated A/B (pre-registered)",
+  "zh": "模拟线上 A/B",
+  "done": true,
+  "result": "offline vs online Kendall tau -0.4"
+ },
+ {
+  "stage": 8,
+  "title": "Postgres + safe rollout",
+  "zh": "影子 / 灰度 / 回滚",
+  "done": false,
+  "result": "shadow → canary → promote / auto-rollback"
+ },
+ {
+  "stage": 9,
+  "title": "Release-guard agent",
+  "zh": "发布守门 agent",
+  "done": false,
+  "result": "gate recall None, precision None"
+ },
+ {
+  "stage": 10,
+  "title": "Web demo",
+  "zh": "网页 demo",
+  "done": true,
+  "result": "this page"
+ },
+ {
+  "stage": 11,
+  "title": "E-commerce adapter",
+  "zh": "电商领域适配器",
+  "done": false,
+  "result": "next: Amazon Reviews 2023"
+ }
+]

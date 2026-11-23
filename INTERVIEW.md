@@ -95,7 +95,16 @@
 
 ### 10. `echostream/core/mmr.py` + `scripts/stage6_mmr.py`
 - **骨架**：贪心选 λ·相关性 − (1−λ)·与已选物品的最大相似度；相似度 = 类别 Jaccard 与标题余弦的平均。
-- **为什么**：只按分数排，前 10 个常常是同一类，用户会腻。λ 的默认值按事先写好的规则选（见 `results/stage6_mmr.json`）。
+- **为什么**：只按分数排，前 10 个常常是同一类，用户会腻。λ 的默认值按事先写好的规则选：λ=0.7 时类别多样性 0.746 → 0.896，
+  NDCG@10 不显著变化（`results/stage6_mmr.json`）。在 Stage 7 的模拟里 MMR 还让每次曝光的正样本率略升 +0.0013。
+- **语法**：`max_sim = np.maximum(max_sim, similarity[best])` 增量维护「到已选集合的最大相似度」，整体 O(k·n)。
+
+### 10b. `echostream/sim/simulator.py` + `scripts/stage7_sim_ab.py` + `PREREG.md`
+- **骨架**：把全观测小矩阵当成「模拟用户」：给每个用户展示 5 屏 × 10 个视频，反应 = 真实 watch_ratio，正样本更新历史。
+  5 个方案按一致性哈希分桶（每个方案 20 个桶）。
+- **为什么**：先把假设、指标、分析方法、停止规则写进 PREREG.md 并提交，再跑实验，避免「看了结果再挑指标」。
+  模拟器是确定性的，所以同时报告组间（真实 A/B 能做的）和组内（每个用户跑所有方案，更灵敏）两种分析。
+- **语法**：`scipy.stats.ttest_ind(a, b, equal_var=False)` 是 Welch t 检验；Holm 校正：p 值从小到大乘以 (m − rank)，再取累计最大值。
 
 ---
 
@@ -144,6 +153,32 @@
 - **为什么**：特征节点没有持久化，丢了用 `python -m echostream.store.rebuild` 从归档按分区顺序重放（测试验证重建后计数和顺序完全一致）。
   缓存：用户结果缓存 TTL + 抖动（防止同时过期），进程内 single-flight + 跨副本 Redis 锁防击穿，新事件到达时 Lua 顺手删缓存。
 
+### 16. `echostream/agent/eval_run.py` + `echostream/agent/gate_check.py` + `echostream/core/gate.py`（Stage 9）
+- **骨架**：`make eval` 对一个「候选配置」（双塔模型、排序模型、召回配额、故障注入开关）在测试阶段跑完整的召回 → 排序，
+  把汇总指标写进 `results/history.jsonl`，逐用户数组存进 `artifacts/eval/`。`gate()` 拿候选和上一个好版本做配对比较。
+- **为什么**：门禁的阈值来自数据：配对 bootstrap 的 CI 半宽和 Stage 2 实测的「换随机种子重训」标准差取大者；只有下降超过阈值
+  且 CI 整体在 0 以下才拦。这样「换个种子重训」这类无害改动不会误报，真正的退化会被拦。
+- **语法**：`np.savez_compressed(path, **arrays)` 一次存多个数组；`dataclasses.asdict` 把配置写进 JSON。
+
+### 17. `echostream/agent/loop.py` + `tools.py` + `providers.py`（Stage 9）
+- **骨架**：手写的 agent 循环：`messages = [system, user(上下文)]`，每轮调用 `provider.chat(messages, tools)`，
+  模型返回工具调用就执行并把结果作为 `role=tool` 消息追加，直到模型调用 `write_report`。工具：`diff_runs`、`slice_metrics`
+  （按用户活跃度 / 冷物品 / 类别切片）、`path_contribution`、`data_freshness`、`shard_health`。
+- **为什么**：
+  - 不用框架，循环只有 40 行，面试能一行行讲清楚；工具只返回小摘要，不把大数组塞进上下文。
+  - `FakeProvider` 是确定性的规则「模型」：按固定顺序调工具、按证据下结论，CI 里不需要网络和密钥，但工具调用链是真的。
+  - `DashScopeProvider` 走 OpenAI 兼容接口（qwen3.8-flash），密钥只从环境变量读；每次调用前用「最坏情况 token 数 × 单价」
+    检查累计花费，超过 ¥2 直接拒绝（`CostLedger`，跨运行累计）。单价默认是故意偏高的占位值，用户可用环境变量改成官网价格。
+  - 工具出错不会让循环崩溃，错误作为工具结果返回给模型（有测试）。
+- **语法**：OpenAI 风格的 `tools=[{"type": "function", "function": {"name", "description", "parameters": JSON Schema}}]`；
+  模型返回 `tool_calls[i].function.arguments` 是 JSON 字符串，要 `json.loads`。
+
+### 18. `web/`（Stage 10）
+- **骨架**：Vite + React + TypeScript。Feed 页（选用户 → 推荐卡片 → 「看完 / 划走」发事件 → 下一屏变化高亮）、
+  每阶段耗时瀑布图（含每个分片的耗时和失败重试）、集群面板（分片 / 副本 / 特征节点 / worker / 分区积压，演示模式下可以一键注入故障）、
+  A/B 页（Stage 7 结果）、质量页（评测历史 + 项目历程时间轴）。
+- **为什么**：后端项目也要能「看见」：瀑布图直接展示 scatter-gather 的尾延迟和降级标签；点「划走」后下一屏变化，就是「回响」。
+
 ---
 
 ## 第四部分：面试问答（约 30 题，答案都能在代码里指出来）
@@ -161,9 +196,12 @@
 7. **GAUC 和 AUC 有什么区别？为什么排序看 GAUC？** 见第 9 节：GAUC 按用户分组，只衡量「同一用户内部」排得对不对。
 8. **冷启动怎么处理？** 物品：id dropout 让物品塔能只靠内容；内容召回路在「历史里没有交互」的物品中按标题向量找；平台热门路知道还没被
    数据集用户看过的新视频。用户：用户塔的类别特征 + 热门路。数据：冷物品占测试真值的 38%，内容路召回其中 21%（`stage3_multipath.json`）。
-9. **离线指标好，线上一定好吗？** 不一定。Stage 7 用全观测小矩阵做会话模拟，比较离线和模拟线上的排序是否一致（`results/stage7_ab.json`）。
-   另外排序模型 v1 就是一个反例：离线训练阶段和线上特征分布不一致导致变差。
-10. **MMR 的 λ 怎么选？** 事先写好规则：选 NDCG@10 下降不显著（配对 CI 含 0）的最小 λ，见 `results/stage6_mmr.json`。
+9. **离线指标好，线上一定好吗？** 不一定，这个项目里就有两个真实反例。① Stage 7 预注册的模拟 A/B：大矩阵离线 NDCG@10 最好的
+   「召回+排序」(0.110)，在全观测小矩阵的模拟用户上反而比双塔差（每次曝光的正样本率 0.179 vs 0.213，配对差 −0.034
+   [−0.037, −0.030]）；5 个方案的离线排名和模拟线上排名 Kendall τ = −0.4（`results/stage7_ab.json`）。我的解释（假设）：
+   排序模型的标签来自曝光日志，它学会了「平台会推什么」，在没有曝光偏差的用户上不成立。② 排序 v1 训练阶段和线上特征分布不一致导致变差。
+10. **MMR 的 λ 怎么选？** 事先写好规则：选 NDCG@10 下降不显著（配对 CI 含 0）的最小 λ。结果 λ=0.7：类别多样性 0.746 → 0.896，
+    NDCG@10 0.1100 → 0.1099（差值 CI 含 0）；λ=0.3 时 NDCG@10 掉 0.015（`results/stage6_mmr.json`）。
 11. **你的正样本定义有什么问题？** watch_ratio > 2 偏向短视频（<7 秒 18.1% 是正样本，>60 秒只有 0.2%）；阈值敏感性在 DATA.md。
 12. **为什么 ItemCF 在大矩阵上很弱、在小矩阵上很强？** 大矩阵测试窗口大部分视频是新视频，ItemCF 只能推荐历史里出现过的；小矩阵是固定的
     3,327 个老视频，且每个用户都看过全部，没有曝光偏差。

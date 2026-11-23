@@ -24,11 +24,28 @@ from dataclasses import dataclass, field
 import httpx
 import numpy as np
 
-from echostream.core.metrics import bootstrap_ci
 from echostream.sim.online_driver import drive, per_version
 from echostream.store import db
 
-SLO_P99_MS = 150.0
+SLO_P99_MS = 50.0   # ~2x the p99 measured at 200 rps in Stage 5 (26 ms)
+
+
+def canary_reasons(control: dict, canary: dict, diff_ci: tuple[float, float],
+                   slo_p99_ms: float = SLO_P99_MS) -> list[str]:
+    """Pure decision rule for the canary phase. control/canary: {requests, errors, degraded, p99_ms}.
+    Returns the list of rollback reasons (empty = promote)."""
+    reasons = []
+    lo, hi = diff_ci
+    if canary["errors"] / max(canary["requests"], 1) > 0.01:
+        reasons.append(f"canary error rate {canary['errors']}/{canary['requests']}")
+    if canary["p99_ms"] > max(slo_p99_ms, 2 * control["p99_ms"]):
+        reasons.append(f"canary p99 {canary['p99_ms']:.1f} ms > SLO max({slo_p99_ms:.0f}, 2x control {control['p99_ms']:.1f})")
+    if canary["degraded"] / max(canary["requests"], 1) > control["degraded"] / max(control["requests"], 1) + 0.05:
+        reasons.append(f"canary degraded share {canary['degraded']}/{canary['requests']} vs control "
+                       f"{control['degraded']}/{control['requests']}")
+    if hi < 0:
+        reasons.append(f"online quality: positives/impression diff CI [{lo:+.4f}, {hi:+.4f}] < 0")
+    return reasons
 
 
 @dataclass
@@ -130,16 +147,7 @@ class RolloutController:
             rep.phases["canary"] = phase
             rep.note(f"canary result: control pos_rate {ctl['pos_rate']:.4f} p99 {ctl['p99_ms']:.1f}ms | "
                      f"canary pos_rate {can['pos_rate']:.4f} p99 {can['p99_ms']:.1f}ms | diff CI [{lo:+.4f}, {hi:+.4f}]")
-            reasons = []
-            if can["errors"] / max(can["requests"], 1) > 0.01:
-                reasons.append(f"canary error rate {can['errors']}/{can['requests']}")
-            if can["p99_ms"] > max(SLO_P99_MS, 2 * ctl["p99_ms"]):
-                reasons.append(f"canary p99 {can['p99_ms']:.1f} ms > SLO max({SLO_P99_MS:.0f}, 2x control {ctl['p99_ms']:.1f})")
-            if can["degraded"] / max(can["requests"], 1) > ctl["degraded"] / max(ctl["requests"], 1) + 0.05:
-                reasons.append(f"canary degraded share {can['degraded']}/{can['requests']} vs control "
-                               f"{ctl['degraded']}/{ctl['requests']}")
-            if hi < 0:
-                reasons.append(f"online quality: positives/impression diff CI [{lo:+.4f}, {hi:+.4f}] < 0")
+            reasons = canary_reasons(ctl, can, (float(lo), float(hi)))
             if reasons:
                 return self._rollback(conn, rep, current, reasons)
 
